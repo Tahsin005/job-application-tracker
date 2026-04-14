@@ -2,6 +2,8 @@ import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { betterAuth } from "better-auth";
 import connectDB from "../db";
 import { initializeUserBoard } from "../init-user-board";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 const mongooseInstance = await connectDB();
 const client = mongooseInstance.connection.getClient();
@@ -32,3 +34,21 @@ export const auth = betterAuth({
         }
     }
 });
+
+export async function getSession() {
+    const result = await auth.api.getSession({
+        headers: await headers(),
+    });
+
+    return result;
+}
+
+export async function signOut() {
+    const result = await auth.api.signOut({
+        headers: await headers(),
+    });
+
+    if (result.success) {
+        redirect("/sign-in");
+    }
+}
