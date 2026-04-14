@@ -92,7 +92,7 @@ function DroppableColumn({
         },
     });
 
-    const sortedJobs = column.jobApplications?.sort((a, b) => a.order - b.order) || [];
+    const sortedJobs = [...(column.jobApplications || [])].sort((a, b) => a.order - b.order);
     return (
         <Card className="min-w-[300px] flex-shrink-0 shadow-md p-0">
         <CardHeader
@@ -192,7 +192,7 @@ export default function KanbanBoard({ board, userId }: KanbanBoardProps) {
     const [activeId, setActiveId] = useState<string | null>(null);
     const { columns, moveJob } = useBoard(board);
 
-    const sortedColumns = columns?.sort((a, b) => a.order - b.order) || [];
+    const sortedColumns = [...(columns || [])].sort((a, b) => a.order - b.order);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -221,7 +221,7 @@ export default function KanbanBoard({ board, userId }: KanbanBoardProps) {
         let sourceIndex = -1;
 
         for (const column of sortedColumns) {
-            const jobs = column.jobApplications.sort((a, b) => a.order - b.order) || [];
+            const jobs = [...(column.jobApplications || [])].sort((a, b) => a.order - b.order);
             const jobIndex = jobs.findIndex((j) => j._id === activeId);
             if (jobIndex !== -1) {
                 draggedJob = jobs[jobIndex];
@@ -263,7 +263,7 @@ export default function KanbanBoard({ board, userId }: KanbanBoardProps) {
             if (!targetColumnObj) return;
 
             const allJobsInTargetOriginal =
-                targetColumnObj.jobApplications.sort((a, b) => a.order - b.order) || [];
+                [...(targetColumnObj.jobApplications || [])].sort((a, b) => a.order - b.order);
 
             const allJobsInTargetFiltered =
                 allJobsInTargetOriginal.filter((j) => j._id !== activeId) || [];
@@ -334,7 +334,7 @@ export default function KanbanBoard({ board, userId }: KanbanBoardProps) {
             <DragOverlay>
                 {activeJob ? (
                     <div className="opacity-50">
-                        <JobApplicationCard job={activeJob} columns={sortedColumns} />
+                        <JobApplicationCard job={activeJob} columns={sortedColumns} isOverlay={true} />
                     </div>
                 ) : null}
             </DragOverlay>

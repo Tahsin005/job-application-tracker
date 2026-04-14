@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Plus } from "lucide-react";
@@ -8,6 +8,7 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { createJobApplication } from "@/lib/actions/job-applications";
+import { toast } from "sonner";
 
 interface CreateJobApplicationDialogProps {
     columnId: string;
@@ -31,11 +32,13 @@ export default function CreateJobApplicationDialog({
 }: CreateJobApplicationDialogProps) {
     const [open, setOpen] = useState<boolean>(false);
     const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+    const [isPending, startTransition] = useTransition();
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
-        try {
+        startTransition(async () => {
+            try {
             const result = await createJobApplication({
                 ...formData,
                 columnId,
@@ -49,12 +52,16 @@ export default function CreateJobApplicationDialog({
             if (!result.error) {
                 setFormData(INITIAL_FORM_DATA);
                 setOpen(false);
+                toast.success("Job application created!");
             } else {
+                toast.error("Failed to create application", { description: result.error });
                 console.error("Failed to create job: ", result.error);
             }
         } catch (err) {
+            toast.error("An unexpected error occurred while saving.");
             console.error(err);
         }
+        });
     }
 
     return (
@@ -182,7 +189,9 @@ export default function CreateJobApplicationDialog({
                         >
                             Cancel
                         </Button>
-                        <Button type="submit">Add Application</Button>
+                        <Button type="submit" disabled={isPending}>
+                            {isPending ? "Adding..." : "Add Application"}
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

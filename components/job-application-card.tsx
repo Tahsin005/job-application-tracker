@@ -5,25 +5,29 @@ import { Card, CardContent } from "./ui/card";
 import { Edit2, ExternalLink, MoreVertical, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { deleteJobApplication, updateJobApplication } from "@/lib/actions/job-applications";
+import { toast } from "sonner";
 
 interface JobApplicationCardProps {
     job: JobApplication;
     columns: Column[];
     dragHandleProps?: React.HTMLAttributes<HTMLElement>;
+    isOverlay?: boolean;
 }
 
 export default function JobApplicationCard({
     job,
     columns,
     dragHandleProps,
+    isOverlay,
 }: JobApplicationCardProps) {
     const [isEditing, setIsEditing] = useState(false);
+    const [isPending, startTransition] = useTransition();
     const [formData, setFormData] = useState({
         company: job.company,
         position: job.position,
@@ -38,8 +42,9 @@ export default function JobApplicationCard({
 
     async function handleUpdate(e: React.FormEvent) {
         e.preventDefault();
-        try {
-            const result = await updateJobApplication(job._id, {
+        startTransition(async () => {
+            try {
+                const result = await updateJobApplication(job._id, {
                 ...formData,
                 tags: formData.tags
                 .split(",")
@@ -49,32 +54,51 @@ export default function JobApplicationCard({
 
             if (!result.error) {
                 setIsEditing(false);
+                toast.success("Application updated successfully");
+            } else {
+                toast.error("Update failed", { description: result.error });
             }
         } catch (err) {
-            console.error("Failed to move job application: ", err);
+            toast.error("An unexpected error occurred while saving.");
+            console.error("Failed to update job application: ", err);
         }
+        });
     }
 
     async function handleDelete() {
-        try {
+        startTransition(async () => {
+            try {
             const result = await deleteJobApplication(job._id);
 
             if (result.error) {
+                toast.error("Failed to delete application", { description: result.error });
                 console.error("Failed to delete job application:", result.error);
+            } else {
+                toast.success("Application removed");
             }
         } catch (err) {
-            console.error("Failed to move job application: ", err);
+            toast.error("An unexpected error occurred while deleting.");
+            console.error("Failed to delete job application: ", err);
         }
+        });
     }
 
     async function handleMove(newColumnId: string) {
-        try {
+        startTransition(async () => {
+            try {
             const result = await updateJobApplication(job._id, {
                 columnId: newColumnId,
             });
+            if (result.error) {
+                toast.error("Failed to move application", { description: result.error });
+            } else {
+                toast.success("Application moved");
+            }
         } catch (err) {
+            toast.error("An unexpected error occurred while moving.");
             console.error("Failed to move job application: ", err);
         }
+        });
     }
 
     return (
@@ -115,50 +139,54 @@ export default function JobApplicationCard({
                                 </a>
                             )}
                         </div>
-                        <div className="flex items-start gap-1">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                                        <Edit2 className="mr-2 h-4 w-4" />
-                                        Edit
-                                    </DropdownMenuItem>
-
-                                    {columns.length > 1 && (
-                                        <>
-                                            {columns
-                                                .filter((c) => c._id !== job.columnId)
-                                                .map((column, key) => (
-                                                    <DropdownMenuItem
-                                                        key={key}
-                                                        onClick={() => handleMove(column._id)}
-                                                    >
-                                                        Move to {column.name}
-                                                    </DropdownMenuItem>
-                                            ))}
-                                        </>
-                                    )}
-
-                                    <DropdownMenuItem
-                                        className="text-destructive"
-                                        onClick={() => handleDelete()}
-                                    >
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
+                        
+                        {!isOverlay && (
+                            <div className="flex items-start gap-1">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                                            <Edit2 className="mr-2 h-4 w-4" />
+                                            Edit
+                                        </DropdownMenuItem>
+    
+                                        {columns.length > 1 && (
+                                            <>
+                                                {columns
+                                                    .filter((c) => c._id !== job.columnId)
+                                                    .map((column, key) => (
+                                                        <DropdownMenuItem
+                                                            key={key}
+                                                            onClick={() => handleMove(column._id)}
+                                                        >
+                                                            Move to {column.name}
+                                                        </DropdownMenuItem>
+                                                ))}
+                                            </>
+                                        )}
+    
+                                        <DropdownMenuItem
+                                            className="text-destructive"
+                                            onClick={() => handleDelete()}
+                                        >
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        )}
                     </div>
                 </CardContent>
             </Card>
 
-            <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                <DialogContent className="max-w-2xl">
+            {!isOverlay && (
+                <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                    <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Add Job Application</DialogTitle>
                         <DialogDescription>Track a new job application</DialogDescription>
@@ -270,11 +298,14 @@ export default function JobApplicationCard({
                             >
                                 Cancel
                             </Button>
-                            <Button type="submit">Save Changes</Button>
+                            <Button type="submit" disabled={isPending}>
+                                {isPending ? "Saving..." : "Save Changes"}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
             </Dialog>
+            )}
         </>
     )
 }

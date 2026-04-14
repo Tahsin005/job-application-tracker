@@ -186,12 +186,12 @@ export async function updateJobApplication(
 
             const jobsThatNeedToShift = jobsInTargetColumn.slice(order);
 
-            for (const job of jobsThatNeedToShift) {
-                await JobApplication.findByIdAndUpdate(job._id, {
-                    $set: {
-                        order: job.order + 100
-                    }
-                })
+            if (jobsThatNeedToShift.length > 0) {
+                const jobIdsToShift = jobsThatNeedToShift.map((j) => j._id);
+                await JobApplication.updateMany(
+                    { _id: { $in: jobIdsToShift } },
+                    { $inc: { order: 100 } }
+                );
             }
         } else {
             if (jobsInTargetColumn.length > 0) {
@@ -234,23 +234,22 @@ export async function updateJobApplication(
         if (order < oldPositionIndex) {
             const jobsToShiftDown = otherJobsInColumn.slice(order, oldPositionIndex);
 
-            for (const job of jobsToShiftDown) {
-                await JobApplication.findByIdAndUpdate(job._id, {
-                    $set: {
-                        order: job.order + 100
-                    }
-                });
+            if (jobsToShiftDown.length > 0) {
+                const jobIds = jobsToShiftDown.map(j => j._id);
+                await JobApplication.updateMany(
+                    { _id: { $in: jobIds } },
+                    { $inc: { order: 100 } }
+                );
             }
         } else if (order > oldPositionIndex) {
             const jobsToShiftUp = otherJobsInColumn.slice(oldPositionIndex, order);
 
-            for (const job of jobsToShiftUp) {
-                const newOrder = Math.max(0, job.order - 100);
-                await JobApplication.findByIdAndUpdate(job._id, {
-                    $set: {
-                        order: newOrder
-                    }
-                });
+            if (jobsToShiftUp.length > 0) {
+                const jobIds = jobsToShiftUp.map(j => j._id);
+                await JobApplication.updateMany(
+                    { _id: { $in: jobIds } },
+                    { $inc: { order: -100 } }
+                );
             }
         }
 

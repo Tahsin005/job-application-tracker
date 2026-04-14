@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Board, Column, JobApplication } from "../models/models.types";
 import { updateJobApplication } from "../actions/job-applications";
+import { toast } from "sonner";
 
 export function useBoard(initialBoard?: Board | null) {
     const [board, setBoard] = useState<Board | null>(initialBoard || null);
@@ -21,6 +22,8 @@ export function useBoard(initialBoard?: Board | null) {
         newColumnId: string,
         newOrder: number
     ) {
+        const previousColumns = [...columns];
+        
         setColumns((prev) => {
             const newColumns = prev.map((col) => ({
                 ...col,
@@ -81,7 +84,14 @@ export function useBoard(initialBoard?: Board | null) {
                 columnId: newColumnId,
                 order: newOrder,
             });
+            
+            if (result.error) {
+                setColumns(previousColumns);
+                toast.error("Failed to move job application", { description: result.error });
+            }
         } catch (err) {
+            setColumns(previousColumns);
+            toast.error("An unexpected error occurred while moving the application.");
             console.error("Error", err);
         }
     }
