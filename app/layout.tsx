@@ -9,8 +9,8 @@ const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 const outfit = Outfit({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "iBuiltThis - Share Your Creations, Discover New Launches",
-  description: "A community platform for creators to showcase their apps, AI tools, SaaS products, and creative projects. Authentic launches, real builders, genuine feedback.",
+  title: "Job Application Tracker",
+  description: "Track your job applications and never miss an opportunity.",
 };
 
 export default function RootLayout({
