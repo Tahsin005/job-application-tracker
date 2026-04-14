@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Job Application Tracker
 
-## Getting Started
+A high-performance, real-time Kanban board tailored specifically for organizing, tracking, and prioritizing your job hunting lifecycle. Built with the bleeding-edge Next.js 16 architecture, this platform allows developers and professionals to seamlessly drag-and-drop applications across custom pipelines natively.
 
-First, run the development server:
+## Features
+- **Kanban Pipeline Strategy:** Beautifully organized column interfaces mapping your exact life-cycle (Applied, Interviewing, Offer, Rejection). 
+- **Optimistic Drag and Drop UI:** Powered by `@dnd-kit`, experience hyper-smooth 60FPS physics when moving task cards. UI interactions resolve instantly before database commitments happen!
+- **Edge-Level Security Guarding:** Powered by `better-auth` running on Next.js Global Proxy Middlewares, unauthorized users are intelligently routed away from private boards natively.
+- **Micro-Aggregated Database Calls:** Heavily optimized MongoDB sorting functions running `updateMany` queries instead of recursive loops, keeping your server cost and compute metrics bare-minimum.
+- **Granular Interactions:** Shadcn's interactive toolchains and Radix UI elements provide slick modal edits, popover form interactions, and reactive `sonner` Toaster alerts globally.
 
+## Technology Stack
+- **Framework:** Next.js 16.2 (App Router & Turbopack)
+- **Database:** MongoDB & Mongoose Object Modeling
+- **Authentication:** Better Auth (Secure edge-runtime session validation)
+- **Styling:** Tailwind CSS V4 & Custom CSS variables
+- **Components:** Shadcn-UI & Lucide React
+- **Complex UI States:** `@dnd-kit/core` and `useTransition` hooks natively.
+
+## Getting Started Locally
+
+### 1. Clone the repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/Tahsin005/job-application-tracker.git
+cd job-application-tracker
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install Dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Environment Variables
+Duplicate the `.env.example` mapping to a local `.env` file, and fill in the necessary secrets (specifically your `MONGODB_URI` string alongside your local or production network secrets).
+```bash
+cp .env.example .env
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Boot up the Development Server
+```bash
+npm run dev
+```
 
-## Learn More
+Finally, open [http://localhost:3000](http://localhost:3000) inside your browser!
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Active Developments
+Feel free to open Issues or PRs mapping specific functionality you'd love integrated into the tracker schema natively! 
