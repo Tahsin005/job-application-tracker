@@ -29,11 +29,13 @@ async function getBoard(userId: string) {
 
 async function DashboardPage() {
     const session = await getSession();
-    const board = await getBoard(session?.user.id ?? "");
 
     if (!session?.user) {
         redirect("/sign-in");
     }
+
+    const board = await getBoard(session.user.id);
+
     return (
         <div className="min-h-screen bg-white">
             <div className="container mx-auto p-6">
