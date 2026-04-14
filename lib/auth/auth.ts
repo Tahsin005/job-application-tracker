@@ -1,6 +1,7 @@
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { betterAuth } from "better-auth";
 import connectDB from "../db";
+import { initializeUserBoard } from "../init-user-board";
 
 const mongooseInstance = await connectDB();
 const client = mongooseInstance.connection.getClient();
@@ -19,4 +20,15 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
+    databaseHooks: {
+        user: {
+            create: {
+                after: async (user) => {
+                    if (user.id) {
+                        await initializeUserBoard(user.id);
+                    }
+                }
+            }
+        }
+    }
 });
