@@ -24,7 +24,7 @@ export default async function proxy(request: NextRequest) {
         if (isAuthRoute && session?.user) {
             return NextResponse.redirect(new URL("/dashboard", request.url));
         }
-    } catch (e) {
+    } catch {
         if (isProtectedRoute) {
             return NextResponse.redirect(new URL("/sign-in", request.url));
         }

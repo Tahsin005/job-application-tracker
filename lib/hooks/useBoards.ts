@@ -1,21 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Board, Column, JobApplication } from "../models/models.types";
 import { updateJobApplication } from "../actions/job-applications";
 import { toast } from "sonner";
 
 export function useBoard(initialBoard?: Board | null) {
+    const [prevInitialBoard, setPrevInitialBoard] = useState<Board | null | undefined>(initialBoard);
     const [board, setBoard] = useState<Board | null>(initialBoard || null);
     const [columns, setColumns] = useState<Column[]>(initialBoard?.columns || []);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (initialBoard) {
-            setBoard(initialBoard);
-            setColumns(initialBoard.columns || []);
-        }
-    }, [initialBoard]);
+    if (initialBoard !== prevInitialBoard) {
+        setPrevInitialBoard(initialBoard);
+        setBoard(initialBoard || null);
+        setColumns(initialBoard?.columns || []);
+    }
 
     async function moveJob(
         jobApplicationId: string,
@@ -79,6 +79,7 @@ export function useBoard(initialBoard?: Board | null) {
             return newColumns;
         });
 
+        setError(null);
         try {
             const result = await updateJobApplication(jobApplicationId, {
                 columnId: newColumnId,
@@ -87,11 +88,14 @@ export function useBoard(initialBoard?: Board | null) {
             
             if (result.error) {
                 setColumns(previousColumns);
+                setError(result.error);
                 toast.error("Failed to move job application", { description: result.error });
             }
         } catch (err) {
             setColumns(previousColumns);
-            toast.error("An unexpected error occurred while moving the application.");
+            const errorMessage = "An unexpected error occurred while moving the application.";
+            setError(errorMessage);
+            toast.error(errorMessage);
             console.error("Error", err);
         }
     }

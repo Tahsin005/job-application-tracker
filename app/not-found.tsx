@@ -10,7 +10,7 @@ export default function NotFound() {
       </div>
       <h2 className="text-4xl font-bold tracking-tight sm:text-5xl mb-4">404 - Not Found</h2>
       <p className="text-muted-foreground text-lg mb-8 max-w-[500px]">
-        We couldn't find the page you're looking for. It seems the job you were hunting might not exist anymore!
+        We couldn&apos;t find the page you&apos;re looking for. It seems the job you were hunting might not exist anymore!
       </p>
       <Link href="/">
         <Button size="lg" className="rounded-full px-8 shadow-md">

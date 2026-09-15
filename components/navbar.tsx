@@ -7,9 +7,10 @@ import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import SignOutButton from "./sign-out-btn";
+import { Skeleton } from "./ui/skeleton";
 
 export default function Navbar() {
-    const { data: session } = useSession();
+    const { data: session, isPending } = useSession();
     return (
         <nav className="border-b border-gray-200 bg-white">
             <div className="container mx-auto flex h-16 items-center px-4 justify-between">
@@ -22,7 +23,12 @@ export default function Navbar() {
                 </Link>
                 
                 <div className="flex items-center gap-4">
-                    {session?.user ? (
+                    {isPending && !session ? (
+                        <div className="flex items-center gap-3">
+                            <Skeleton className="h-8 w-20 rounded-md" />
+                            <Skeleton className="h-8 w-8 rounded-full" />
+                        </div>
+                    ) : session?.user ? (
                         <>
                             <Link href="/dashboard">
                                 <Button

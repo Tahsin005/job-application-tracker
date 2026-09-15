@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signIn, signUp } from "@/lib/auth/auth-client";
+import { signIn } from "@/lib/auth/auth-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -42,7 +42,7 @@ export default function SignIn() {
             } else {
                 router.push("/dashboard");
             }
-        } catch (err) {
+        } catch {
             setError("An unexpected error occurred");
         } finally {
             setLoading(false);
@@ -105,7 +105,7 @@ export default function SignIn() {
                             {loading ? "Signing in..." : "Sign In"}
                         </Button>
                         <p className="text-center text-sm text-gray-600">
-                            Don't have an account?{" "}
+                            Don&apos;t have an account?{" "}
                             <Link
                                 href="/sign-up"
                                 className="font-medium text-primary hover:underline"
