@@ -305,3 +305,35 @@ export async function deleteJobApplication(id: string) {
         success: true 
     };
 }
+
+export async function getUserBoard() {
+    const session = await getSession();
+
+    if (!session?.user) {
+        return {
+            error: "Unauthorized",
+            data: null,
+        };
+    }
+
+    await connectDB();
+
+    const boardDoc = await Board.findOne({
+        userId: session.user.id,
+        name: "Job Hunt",
+    }).populate({
+        path: "columns",
+        populate: {
+            path: "jobApplications",
+        },
+    });
+
+    if (!boardDoc) {
+        return { data: null };
+    }
+
+    return {
+        data: JSON.parse(JSON.stringify(boardDoc)),
+    };
+}
+

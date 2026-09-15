@@ -18,9 +18,11 @@ import {
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import CreateJobApplicationDialog from "./create-job-dialog";
 import JobApplicationCard from "./job-application-card";
-import { useBoard } from "@/lib/hooks/useBoards";
+import { useBoardFacade } from "@/lib/facades/useBoardFacade";
+import { Search } from "lucide-react";
 import {
     closestCorners,
     DndContext,
@@ -38,7 +40,6 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useState } from "react";
 
 interface KanbanBoardProps {
     board: Board;
@@ -95,57 +96,56 @@ function DroppableColumn({
     const sortedJobs = [...(column.jobApplications || [])].sort((a, b) => a.order - b.order);
     return (
         <Card className="min-w-[300px] flex-shrink-0 shadow-md p-0">
-        <CardHeader
-            className={`${config.color} text-white rounded-t-lg pb-3 pt-3`}
-        >
-            <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-                {config.icon}
-                <CardTitle className="text-white text-base font-semibold">
-                {column.name}
-                </CardTitle>
-            </div>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-white hover:bg-white/20"
-                >
-                    <MoreVertical className="h-4 w-4" />
-                </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                <DropdownMenuItem className="text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Column
-                </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-            </div>
-        </CardHeader>
-
-        <CardContent
-            ref={setNodeRef}
-            className={`space-y-2 pt-4 bg-gray-50/50 min-h-[400px] rounded-b-lg ${
-            isOver ? "ring-2 ring-blue-500" : ""
-            }`}
-        >
-            <SortableContext
-            items={sortedJobs.map((job) => job._id)}
-            strategy={verticalListSortingStrategy}
+            <CardHeader
+                className={`${config.color} text-white rounded-t-lg pb-3 pt-3`}
             >
-            {sortedJobs.map((job, key) => (
-                <SortableJobCard
-                key={key}
-                job={{ ...job, columnId: job.columnId || column._id }}
-                columns={sortedColumns}
-                />
-            ))}
-            </SortableContext>
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        {config.icon}
+                        <CardTitle className="text-white text-base font-semibold">
+                            {column.name}
+                        </CardTitle>
+                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-white hover:bg-white/20"
+                            >
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Column
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </CardHeader>
 
-            <CreateJobApplicationDialog columnId={column._id} boardId={boardId} />
-        </CardContent>
+            <CardContent
+                ref={setNodeRef}
+                className={`space-y-2 pt-4 bg-gray-50/50 min-h-[400px] rounded-b-lg ${isOver ? "ring-2 ring-blue-500" : ""
+                    }`}
+            >
+                <SortableContext
+                    items={sortedJobs.map((job) => job._id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    {sortedJobs.map((job, key) => (
+                        <SortableJobCard
+                            key={key}
+                            job={{ ...job, columnId: job.columnId || column._id }}
+                            columns={sortedColumns}
+                        />
+                    ))}
+                </SortableContext>
+
+                <CreateJobApplicationDialog columnId={column._id} boardId={boardId} />
+            </CardContent>
         </Card>
     );
 }
@@ -189,8 +189,14 @@ function SortableJobCard({
 }
 
 export default function KanbanBoard({ board }: KanbanBoardProps) {
-    const [activeId, setActiveId] = useState<string | null>(null);
-    const { columns, moveJob } = useBoard(board);
+    const {
+        columns,
+        moveJob,
+        activeId,
+        setActiveId,
+        searchQuery,
+        setSearchQuery,
+    } = useBoardFacade(board);
 
     const sortedColumns = [...(columns || [])].sort((a, b) => a.order - b.order);
 
@@ -246,8 +252,8 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
             targetColumnId = targetColumn._id;
             const jobsInTarget =
                 targetColumn.jobApplications
-                .filter((j) => j._id !== activeId)
-                .sort((a, b) => a.order - b.order) || [];
+                    .filter((j) => j._id !== activeId)
+                    .sort((a, b) => a.order - b.order) || [];
             newOrder = jobsInTarget.length;
         } else if (targetJob) {
             const targetJobColumn = sortedColumns.find((col) =>
@@ -278,11 +284,11 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 
             if (targetIndexInFiltered !== -1) {
                 if (sourceColumn._id === targetColumnId) {
-                if (sourceIndex < targetIndexInOriginal) {
-                    newOrder = targetIndexInFiltered + 1;
-                } else {
-                    newOrder = targetIndexInFiltered;
-                }
+                    if (sourceIndex < targetIndexInOriginal) {
+                        newOrder = targetIndexInFiltered + 1;
+                    } else {
+                        newOrder = targetIndexInFiltered;
+                    }
                 } else {
                     newOrder = targetIndexInFiltered;
                 }
@@ -312,6 +318,18 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
             onDragEnd={handleDragEnd}
         >
             <div className="space-y-4">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="relative w-full max-w-sm">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Filter by company, role, or tag..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 h-9 bg-white"
+                        />
+                    </div>
+                </div>
+
                 <div className="flex gap-4 overflow-x-auto pb-4">
                     {sortedColumns.map((col, key) => {
                         const config = COLUMN_CONFIG[key] || {

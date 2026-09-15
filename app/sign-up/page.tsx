@@ -1,45 +1,58 @@
 "use client";
 
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signUp } from "@/lib/auth/auth-client";
+import { signUpSchema, SignUpFormData } from "@/lib/validations/auth";
 import Link from "next/link";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function SignUp() {
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
-
+    const [serverError, setServerError] = useState("");
     const router = useRouter();
 
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<SignUpFormData>({
+        resolver: zodResolver(signUpSchema),
+        defaultValues: {
+            name: "",
+            email: "",
+            password: "",
+        },
+    });
+
+    async function onSubmit(data: SignUpFormData) {
+        setServerError("");
 
         try {
             const result = await signUp.email({
-                name,
-                email,
-                password,
+                name: data.name,
+                email: data.email,
+                password: data.password,
             });
 
             if (result.error) {
-                setError(result.error.message ?? "Failed to sign up");
+                setServerError(result.error.message ?? "Failed to sign up");
             } else {
-                router.push("/dashboard")
+                router.push("/dashboard");
             }
         } catch {
-            setError("An unexpected error occurred. Please try again.");
-        } finally {
-            setLoading(false);
+            setServerError("An unexpected error occurred. Please try again.");
         }
     }
 
@@ -55,63 +68,66 @@ export default function SignUp() {
                     </CardDescription>
                 </CardHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <CardContent className="space-y-4">
-                        {error && (
+                        {serverError && (
                             <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                                {error}
+                                {serverError}
                             </div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="name" className="text-gray-700">
+                            <Label htmlFor="signup-name" className="text-gray-700">
                                 Name
                             </Label>
                             <Input
-                                id="name"
+                                id="signup-name"
                                 type="text"
                                 placeholder="John Doe"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
+                                {...register("name")}
                                 className="border-gray-300 focus:border-primary focus:ring-primary"
                             />
+                            {errors.name && (
+                                <p className="text-xs text-destructive">{errors.name.message}</p>
+                            )}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="text-gray-700">
+                            <Label htmlFor="signup-email" className="text-gray-700">
                                 Email
                             </Label>
                             <Input
-                                id="email"
+                                id="signup-email"
                                 type="email"
                                 placeholder="you@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
+                                {...register("email")}
                                 className="border-gray-300 focus:border-primary focus:ring-primary"
                             />
+                            {errors.email && (
+                                <p className="text-xs text-destructive">{errors.email.message}</p>
+                            )}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="password" className="text-gray-700">
+                            <Label htmlFor="signup-password" className="text-gray-700">
                                 Password
                             </Label>
                             <Input
-                                id="password"
+                                id="signup-password"
                                 type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={8}
+                                placeholder="••••••••"
+                                {...register("password")}
                                 className="border-gray-300 focus:border-primary focus:ring-primary"
                             />
+                            {errors.password && (
+                                <p className="text-xs text-destructive">{errors.password.message}</p>
+                            )}
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col space-y-4">
                         <Button
                             type="submit"
                             className="w-full bg-primary hover:bg-primary/90"
-                            disabled={loading}
+                            disabled={isSubmitting}
                         >
-                            {loading ? "Creating account..." : "Sign Up"}
+                            {isSubmitting ? "Creating account..." : "Sign Up"}
                         </Button>
                         <p className="text-center text-sm text-gray-600">
                             Already have an account?{" "}
@@ -126,5 +142,5 @@ export default function SignUp() {
                 </form>
             </Card>            
         </div>
-    )
+    );
 }

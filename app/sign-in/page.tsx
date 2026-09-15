@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -12,40 +15,42 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from "@/lib/auth/auth-client";
+import { signInSchema, SignInFormData } from "@/lib/validations/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 export default function SignIn() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
-
+    const [serverError, setServerError] = useState("");
     const router = useRouter();
 
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<SignInFormData>({
+        resolver: zodResolver(signInSchema),
+        defaultValues: {
+            email: "",
+            password: "",
+        },
+    });
 
-        setError("");
-        setLoading(true);
+    async function onSubmit(data: SignInFormData) {
+        setServerError("");
 
         try {
             const result = await signIn.email({
-                email,
-                password,
+                email: data.email,
+                password: data.password,
             });
 
             if (result.error) {
-                setError(result.error.message ?? "Failed to sign in");
+                setServerError(result.error.message ?? "Failed to sign in");
             } else {
                 router.push("/dashboard");
             }
         } catch {
-            setError("An unexpected error occurred");
-        } finally {
-            setLoading(false);
+            setServerError("An unexpected error occurred");
         }
     }
 
@@ -60,49 +65,51 @@ export default function SignIn() {
                         Enter your credentials to access your account
                     </CardDescription>
                 </CardHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <CardContent className="space-y-4">
-                        {error && (
+                        {serverError && (
                             <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                                {error}
+                                {serverError}
                             </div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="text-gray-700">
+                            <Label htmlFor="signin-email" className="text-gray-700">
                                 Email
                             </Label>
                             <Input
-                                id="email"
+                                id="signin-email"
                                 type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
                                 placeholder="you@example.com"
-                                required
+                                {...register("email")}
                                 className="border-gray-300 focus:border-primary focus:ring-primary"
                             />
+                            {errors.email && (
+                                <p className="text-xs text-destructive">{errors.email.message}</p>
+                            )}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="password" className="text-gray-700">
+                            <Label htmlFor="signin-password" className="text-gray-700">
                                 Password
                             </Label>
                             <Input
-                                id="password"
+                                id="signin-password"
                                 type="password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                minLength={8}
+                                placeholder="••••••••"
+                                {...register("password")}
                                 className="border-gray-300 focus:border-primary focus:ring-primary"
                             />
+                            {errors.password && (
+                                <p className="text-xs text-destructive">{errors.password.message}</p>
+                            )}
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col space-y-4">
                         <Button
                             type="submit"
                             className="w-full bg-primary hover:bg-primary/90"
-                            disabled={loading}
+                            disabled={isSubmitting}
                         >
-                            {loading ? "Signing in..." : "Sign In"}
+                            {isSubmitting ? "Signing in..." : "Sign In"}
                         </Button>
                         <p className="text-center text-sm text-gray-600">
                             Don&apos;t have an account?{" "}
