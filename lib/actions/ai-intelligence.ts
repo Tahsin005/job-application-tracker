@@ -4,57 +4,15 @@ import { revalidatePath } from "next/cache";
 import mongoose from "mongoose";
 import { getSession } from "../auth/auth";
 import connectDB from "../db";
-import { stripHtmlTags } from "../utils";
 import {
     JobApplication,
-    Resume,
     consumeFeatureQuota,
     releaseFeatureQuota,
     getUserQuotaSummary,
 } from "../models";
-import {
-    analyzeAtsMatch,
-    generateCoverLetter,
-    generateColdOutreachMessage,
-} from "../ai/agentrouter";
-
-function formatAiErrorMessage(err: unknown, defaultMsg: string): string {
-    console.error("AI Action error:", err);
-    if (err instanceof Error) {
-        const lower = err.message.toLowerCase();
-        if (
-            lower.includes("fetch failed") ||
-            lower.includes("timeout") ||
-            lower.includes("aborterror") ||
-            lower.includes("econnreset")
-        ) {
-            return "The AI service is currently taking longer to respond. Please try again in a few moments.";
-        }
-        return err.message;
-    }
-    return defaultMsg;
-}
-
-async function resolveResumeForJob(userId: string, requestedResumeId?: string, jobId?: string) {
-    if (requestedResumeId && mongoose.Types.ObjectId.isValid(requestedResumeId)) {
-        const found = await Resume.findOne({ _id: requestedResumeId, userId });
-        if (found) return found;
-    }
-
-    if (jobId && mongoose.Types.ObjectId.isValid(jobId)) {
-        const job = await JobApplication.findOne({ _id: jobId, userId });
-        if (job?.resumeId && mongoose.Types.ObjectId.isValid(job.resumeId)) {
-            const linked = await Resume.findOne({ _id: job.resumeId, userId });
-            if (linked) return linked;
-        }
-    }
-
-    const defaultResume = await Resume.findOne({ userId, isDefault: true });
-    if (defaultResume) return defaultResume;
-
-    const anyResume = await Resume.findOne({ userId }).sort({ updatedAt: -1 });
-    return anyResume;
-}
+import { processAiTask, resolveResumeForJob } from "../ai/ai-processor";
+import { publishAiTask } from "../upstash/qstash";
+import { setAiJobStatus } from "../upstash/redis";
 
 export async function runAtsMatchAction({
     jobId,
@@ -109,7 +67,7 @@ export async function runAtsMatchAction({
         };
     }
 
-    // Reserve quota atomically before calling AI
+    // Reserve quota atomically before queuing
     const reserved = await consumeFeatureQuota(session.user.id, "atsScan");
     if (!reserved.allowed) {
         return {
@@ -118,49 +76,70 @@ export async function runAtsMatchAction({
         };
     }
 
+    await setAiJobStatus("atsScan", jobId, {
+        status: "queued",
+        step: "Job queued in background",
+    });
+
+    let dispatch;
     try {
-        const analysis = await analyzeAtsMatch({
-            resumeText: resume.textContent,
-            jobTitle: job.position,
-            company: job.company,
-            jobDescription: stripHtmlTags(job.description),
+        dispatch = await publishAiTask({
+            type: "atsScan",
+            jobId,
+            resumeId: resume._id.toString(),
+            userId: session.user.id,
+        });
+    } catch (err) {
+        console.error("Failed to queue ATS task:", err);
+        await releaseFeatureQuota(session.user.id, "atsScan");
+        await setAiJobStatus("atsScan", jobId, {
+            status: "failed",
+            error: "Failed to queue ATS analysis. Please try again.",
+        });
+        return {
+            error: "Failed to queue ATS analysis. Please try again.",
+            data: null,
+        };
+    }
+
+    if (dispatch.mode === "direct") {
+        const res = await processAiTask({
+            type: "atsScan",
+            jobId,
+            resumeId: resume._id.toString(),
+            userId: session.user.id,
         });
 
-        job.atsAnalysis = {
-            score: analysis.matchScore,
-            missingKeywords: analysis.missingKeywords,
-            matchedKeywords: analysis.matchedKeywords,
-            actionVerbRecommendations: analysis.actionVerbRecommendations,
-            summary: analysis.summary,
-            analyzedAt: new Date(),
-            resumeName: resume.name,
-        };
-
-        if (!job.resumeId) {
-            job.resumeId = resume._id;
-            job.attachedResumeName = resume.name;
+        if (!res.success) {
+            return {
+                error: res.error || "Failed to run ATS analysis.",
+                data: null,
+            };
         }
-
-        await job.save();
 
         revalidatePath("/dashboard");
 
         return {
             error: null,
             data: {
-                analysis: JSON.parse(JSON.stringify(job.atsAnalysis)),
-                job: JSON.parse(JSON.stringify(job)),
+                status: "completed" as const,
+                jobId,
                 remaining: reserved.remaining,
                 limit: reserved.limit,
+                result: res.data,
             },
         };
-    } catch (err: unknown) {
-        await releaseFeatureQuota(session.user.id, "atsScan");
-        return {
-            error: formatAiErrorMessage(err, "Failed to run ATS analysis."),
-            data: null,
-        };
     }
+
+    return {
+        error: null,
+        data: {
+            status: "queued" as const,
+            jobId,
+            remaining: reserved.remaining,
+            limit: reserved.limit,
+        },
+    };
 }
 
 export async function generateCoverLetterAction({
@@ -216,7 +195,7 @@ export async function generateCoverLetterAction({
         };
     }
 
-    // Reserve quota atomically before calling AI
+    // Reserve quota atomically before queuing
     const reserved = await consumeFeatureQuota(session.user.id, "coverLetter");
     if (!reserved.allowed) {
         return {
@@ -225,34 +204,70 @@ export async function generateCoverLetterAction({
         };
     }
 
+    await setAiJobStatus("coverLetter", jobId, {
+        status: "queued",
+        step: "Job queued in background",
+    });
+
+    let dispatch;
     try {
-        const coverLetter = await generateCoverLetter({
-            resumeText: resume.textContent,
-            jobTitle: job.position,
-            company: job.company,
-            jobDescription: stripHtmlTags(job.description),
+        dispatch = await publishAiTask({
+            type: "coverLetter",
+            jobId,
+            resumeId: resume._id.toString(),
+            userId: session.user.id,
+        });
+    } catch (err) {
+        console.error("Failed to queue cover letter task:", err);
+        await releaseFeatureQuota(session.user.id, "coverLetter");
+        await setAiJobStatus("coverLetter", jobId, {
+            status: "failed",
+            error: "Failed to queue cover letter generation. Please try again.",
+        });
+        return {
+            error: "Failed to queue cover letter generation. Please try again.",
+            data: null,
+        };
+    }
+
+    if (dispatch.mode === "direct") {
+        const res = await processAiTask({
+            type: "coverLetter",
+            jobId,
+            resumeId: resume._id.toString(),
+            userId: session.user.id,
         });
 
-        job.aiCoverLetter = coverLetter;
-        await job.save();
+        if (!res.success) {
+            return {
+                error: res.error || "Failed to generate cover letter.",
+                data: null,
+            };
+        }
 
         revalidatePath("/dashboard");
 
         return {
             error: null,
             data: {
-                coverLetter,
+                status: "completed" as const,
+                jobId,
                 remaining: reserved.remaining,
                 limit: reserved.limit,
+                result: res.data,
             },
         };
-    } catch (err: unknown) {
-        await releaseFeatureQuota(session.user.id, "coverLetter");
-        return {
-            error: formatAiErrorMessage(err, "Failed to generate cover letter."),
-            data: null,
-        };
     }
+
+    return {
+        error: null,
+        data: {
+            status: "queued" as const,
+            jobId,
+            remaining: reserved.remaining,
+            limit: reserved.limit,
+        },
+    };
 }
 
 export async function generateOutreachAction({
@@ -308,7 +323,7 @@ export async function generateOutreachAction({
         };
     }
 
-    // Reserve quota atomically before calling AI
+    // Reserve quota atomically before queuing
     const reserved = await consumeFeatureQuota(session.user.id, "outreach");
     if (!reserved.allowed) {
         return {
@@ -317,34 +332,70 @@ export async function generateOutreachAction({
         };
     }
 
+    await setAiJobStatus("outreach", jobId, {
+        status: "queued",
+        step: "Job queued in background",
+    });
+
+    let dispatch;
     try {
-        const outreachMessage = await generateColdOutreachMessage({
-            resumeText: resume.textContent,
-            jobTitle: job.position,
-            company: job.company,
-            jobDescription: stripHtmlTags(job.description),
+        dispatch = await publishAiTask({
+            type: "outreach",
+            jobId,
+            resumeId: resume._id.toString(),
+            userId: session.user.id,
+        });
+    } catch (err) {
+        console.error("Failed to queue outreach task:", err);
+        await releaseFeatureQuota(session.user.id, "outreach");
+        await setAiJobStatus("outreach", jobId, {
+            status: "failed",
+            error: "Failed to queue outreach message generation. Please try again.",
+        });
+        return {
+            error: "Failed to queue outreach message generation. Please try again.",
+            data: null,
+        };
+    }
+
+    if (dispatch.mode === "direct") {
+        const res = await processAiTask({
+            type: "outreach",
+            jobId,
+            resumeId: resume._id.toString(),
+            userId: session.user.id,
         });
 
-        job.aiOutreachMessage = outreachMessage;
-        await job.save();
+        if (!res.success) {
+            return {
+                error: res.error || "Failed to generate outreach message.",
+                data: null,
+            };
+        }
 
         revalidatePath("/dashboard");
 
         return {
             error: null,
             data: {
-                outreachMessage,
+                status: "completed" as const,
+                jobId,
                 remaining: reserved.remaining,
                 limit: reserved.limit,
+                result: res.data,
             },
         };
-    } catch (err: unknown) {
-        await releaseFeatureQuota(session.user.id, "outreach");
-        return {
-            error: formatAiErrorMessage(err, "Failed to generate outreach message."),
-            data: null,
-        };
     }
+
+    return {
+        error: null,
+        data: {
+            status: "queued" as const,
+            jobId,
+            remaining: reserved.remaining,
+            limit: reserved.limit,
+        },
+    };
 }
 
 export async function getUserUsageAction() {
