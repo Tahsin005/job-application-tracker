@@ -13,6 +13,13 @@ export const auth = betterAuth({
     database: mongodbAdapter(db, {
         client,
     }),
+    trustedOrigins: [
+        "https://job-application-tracker-site.vercel.app",
+        "https://*.vercel.app",
+        "http://localhost:3000",
+        ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
+        ...(process.env.NEXT_PUBLIC_BETTER_AUTH_URL ? [process.env.NEXT_PUBLIC_BETTER_AUTH_URL] : []),
+    ],
     session: {
         cookieCache: {
             enabled: true,
