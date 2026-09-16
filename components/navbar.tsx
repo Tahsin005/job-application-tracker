@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "@/lib/auth/auth-client";
-import { Briefcase } from "lucide-react";
+import { Briefcase, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger } from "./ui/dropdown-menu";
@@ -30,6 +30,17 @@ export default function Navbar() {
                         </div>
                     ) : session?.user ? (
                         <>
+                            {Boolean(session.user.isAdmin || session.user.role === "admin") && (
+                                <Link href="/admin">
+                                    <Button
+                                        variant="ghost"
+                                        className="text-red-600 hover:text-red-700 hover:bg-red-50 gap-1.5 font-medium"
+                                    >
+                                        <ShieldCheck className="h-4 w-4" />
+                                        Admin
+                                    </Button>
+                                </Link>
+                            )}
                             <Link href="/dashboard">
                                 <Button
                                     variant="ghost"
@@ -55,14 +66,29 @@ export default function Navbar() {
                                 <DropdownMenuContent className="w-56" align="end">
                                     <DropdownMenuLabel className="font-normal">
                                         <div className="flex flex-col space-y-1">
-                                            <p className="text-sm font-medium leading-none">
-                                                {session.user.name}
-                                            </p>
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-sm font-medium leading-none">
+                                                    {session.user.name}
+                                                </p>
+                                                {Boolean(session.user.isAdmin || session.user.role === "admin") && (
+                                                    <span className="text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-bold uppercase">
+                                                        Admin
+                                                    </span>
+                                                )}
+                                            </div>
                                             <p className="text-xs leading-none text-muted-foreground">
                                                 {session.user.email}
                                             </p>
                                         </div>
                                     </DropdownMenuLabel>
+                                    {Boolean(session.user.isAdmin || session.user.role === "admin") && (
+                                        <div className="px-2 py-1.5 border-y border-gray-100">
+                                            <Link href="/admin" className="flex items-center gap-2 text-xs font-semibold text-red-600 hover:underline">
+                                                <ShieldCheck className="h-3.5 w-3.5" />
+                                                Admin Console
+                                            </Link>
+                                        </div>
+                                    )}
                                     <SignOutButton />
                                 </DropdownMenuContent>
                             </DropdownMenu>

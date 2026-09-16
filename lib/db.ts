@@ -18,7 +18,8 @@ if (!global.mongoose) {
 }
 
 async function connectDB() {
-    if (!MONGODB_URI) {
+    const uri = process.env.MONGODB_URI || MONGODB_URI;
+    if (!uri) {
         throw new Error(
             "Please define the MONGODB_URI environment variable inside .env"
         );
@@ -33,7 +34,7 @@ async function connectDB() {
             bufferCommands: false,
         };
 
-        cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+        cached.promise = mongoose.connect(uri, opts).then((mongoose) => {
             return mongoose;
         });
     }

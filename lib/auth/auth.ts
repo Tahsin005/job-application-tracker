@@ -13,6 +13,22 @@ export const auth = betterAuth({
     database: mongodbAdapter(db, {
         client,
     }),
+    user: {
+        additionalFields: {
+            isAdmin: {
+                type: "boolean",
+                required: false,
+                defaultValue: false,
+                input: false,
+            },
+            role: {
+                type: "string",
+                required: false,
+                defaultValue: "user",
+                input: false,
+            },
+        },
+    },
     trustedOrigins: [
         "https://job-application-tracker-site.vercel.app",
         "https://*.vercel.app",
