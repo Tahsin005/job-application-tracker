@@ -30,7 +30,7 @@ export function useAiResumeFacade() {
     const defaultResume = resumes.find((r) => r.isDefault) || resumes[0] || null;
 
     async function runAtsMatch(jobId: string, resumeId?: string) {
-        const toastId = toast.loading("Analyzing ATS Match with GLM-5.3...");
+        const toastId = toast.loading("Analyzing ATS match...");
         try {
             const result = await atsMatchMutation.mutateAsync({ jobId, resumeId });
             const score = result?.analysis?.score ?? 0;

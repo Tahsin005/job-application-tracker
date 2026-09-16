@@ -65,7 +65,7 @@ async function callAgentRouterChat(
                 console.warn(
                     `Model ${targetModel} unavailable on AgentRouter (${response.status}). Automatically falling back to deepseek-v4-flash...`
                 );
-                return callAgentRouterChat(messages, maxTokens, "deepseek-v4-flash");
+                return callAgentRouterChat(messages, maxTokens, "deepseek-v4-flash", retryCount);
             }
 
             throw new Error(
@@ -84,7 +84,7 @@ async function callAgentRouterChat(
                 console.warn(
                     `Model ${targetModel} channel unavailable on AgentRouter. Automatically falling back to deepseek-v4-flash...`
                 );
-                return callAgentRouterChat(messages, maxTokens, "deepseek-v4-flash");
+                return callAgentRouterChat(messages, maxTokens, "deepseek-v4-flash", retryCount);
             }
             throw new Error(`AgentRouter error: ${data.error.message || JSON.stringify(data.error)}`);
         }

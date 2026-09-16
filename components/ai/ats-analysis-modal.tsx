@@ -52,9 +52,16 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
         attachResume,
     } = useAiResumeFacade();
 
-    const [selectedResumeId, setSelectedResumeId] = useState<string>(
-        job.resumeId || defaultResume?._id || ""
-    );
+    const [userSelectedResumeId, setSelectedResumeId] = useState<string | null>(null);
+
+    const isValidUserSelection =
+        userSelectedResumeId && resumes.some((r) => r._id === userSelectedResumeId);
+    const selectedResumeId =
+        (isValidUserSelection ? userSelectedResumeId : "") ||
+        job.resumeId ||
+        defaultResume?._id ||
+        resumes[0]?._id ||
+        "";
 
     const ats = job.atsAnalysis;
     const atsScore = ats?.score ?? 0;

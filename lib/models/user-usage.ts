@@ -74,19 +74,33 @@ export const UserUsage =
     mongoose.models.UserUsage || mongoose.model<IUserUsage>("UserUsage", UserUsageSchema);
 
 export async function getOrCreateUserUsage(userId: string): Promise<IUserUsage> {
-    let usage = await UserUsage.findOne({ userId });
-    if (!usage) {
-        usage = await UserUsage.create({
-            userId,
-            atsScanCount: 0,
-            atsScanLimit: DEFAULT_LIMITS.atsScan,
-            coverLetterCount: 0,
-            coverLetterLimit: DEFAULT_LIMITS.coverLetter,
-            outreachCount: 0,
-            outreachLimit: DEFAULT_LIMITS.outreach,
-        });
-    }
-    return usage;
+    const usage = await UserUsage.findOneAndUpdate(
+        { userId },
+        {
+            $setOnInsert: {
+                userId,
+                atsScanCount: 0,
+                atsScanLimit: DEFAULT_LIMITS.atsScan,
+                coverLetterCount: 0,
+                coverLetterLimit: DEFAULT_LIMITS.coverLetter,
+                outreachCount: 0,
+                outreachLimit: DEFAULT_LIMITS.outreach,
+            },
+        },
+        { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
+    );
+    return usage as IUserUsage;
+}
+
+export async function releaseFeatureQuota(
+    userId: string,
+    feature: FeatureType
+): Promise<void> {
+    const countField = `${feature}Count` as keyof IUserUsage;
+    await UserUsage.findOneAndUpdate(
+        { userId, [countField]: { $gt: 0 } },
+        { $inc: { [countField]: -1 } }
+    );
 }
 
 export async function getUserQuotaSummary(userId: string): Promise<UserUsageSummary> {

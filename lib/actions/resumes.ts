@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import mongoose from "mongoose";
 import { getSession } from "../auth/auth";
 import connectDB from "../db";
 import { Resume, JobApplication } from "../models";
@@ -50,7 +51,7 @@ export async function createResumeAction(input: CreateResumeInput) {
     await connectDB();
 
     const existingCount = await Resume.countDocuments({ userId: session.user.id });
-    const shouldBeDefault = input.isDefault || existingCount === 0;
+    const shouldBeDefault = validated.data.isDefault || existingCount === 0;
 
     if (shouldBeDefault) {
         await Resume.updateMany(
@@ -82,6 +83,13 @@ export async function setDefaultResumeAction(resumeId: string) {
     if (!session?.user) {
         return {
             error: "Unauthorized",
+            success: false,
+        };
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(resumeId)) {
+        return {
+            error: "Resume not found",
             success: false,
         };
     }
@@ -122,6 +130,13 @@ export async function deleteResumeAction(resumeId: string) {
     if (!session?.user) {
         return {
             error: "Unauthorized",
+            success: false,
+        };
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(resumeId)) {
+        return {
+            error: "Resume not found",
             success: false,
         };
     }
@@ -177,6 +192,20 @@ export async function attachResumeToJobAction({
         };
     }
 
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+        return {
+            error: "Job application not found",
+            data: null,
+        };
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(resumeId)) {
+        return {
+            error: "Resume not found",
+            data: null,
+        };
+    }
+
     await connectDB();
 
     const job = await JobApplication.findOne({
@@ -215,6 +244,8 @@ export async function attachResumeToJobAction({
     };
 }
 
+const MAX_RESUME_BYTES = 5 * 1024 * 1024;
+
 export async function parsePdfResumeAction(formData: FormData) {
     const session = await getSession();
 
@@ -236,6 +267,13 @@ export async function parsePdfResumeAction(formData: FormData) {
     if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
         return {
             error: "Only PDF files are supported for auto-extraction. You can also paste text directly.",
+            data: null,
+        };
+    }
+
+    if (file.size > MAX_RESUME_BYTES) {
+        return {
+            error: "PDF is too large. Please upload a file under 5 MB.",
             data: null,
         };
     }

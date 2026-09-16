@@ -12,5 +12,6 @@ export {
     default as UserUsage,
     getUserQuotaSummary,
     consumeFeatureQuota,
+    releaseFeatureQuota,
     checkFeatureQuota,
 } from "./user-usage";

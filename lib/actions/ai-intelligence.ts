@@ -1,14 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import mongoose from "mongoose";
 import { getSession } from "../auth/auth";
 import connectDB from "../db";
 import { stripHtmlTags } from "../utils";
 import {
     JobApplication,
     Resume,
-    checkFeatureQuota,
     consumeFeatureQuota,
+    releaseFeatureQuota,
     getUserQuotaSummary,
 } from "../models";
 import {
@@ -35,14 +36,14 @@ function formatAiErrorMessage(err: unknown, defaultMsg: string): string {
 }
 
 async function resolveResumeForJob(userId: string, requestedResumeId?: string, jobId?: string) {
-    if (requestedResumeId) {
+    if (requestedResumeId && mongoose.Types.ObjectId.isValid(requestedResumeId)) {
         const found = await Resume.findOne({ _id: requestedResumeId, userId });
         if (found) return found;
     }
 
-    if (jobId) {
+    if (jobId && mongoose.Types.ObjectId.isValid(jobId)) {
         const job = await JobApplication.findOne({ _id: jobId, userId });
-        if (job?.resumeId) {
+        if (job?.resumeId && mongoose.Types.ObjectId.isValid(job.resumeId)) {
             const linked = await Resume.findOne({ _id: job.resumeId, userId });
             if (linked) return linked;
         }
@@ -71,6 +72,20 @@ export async function runAtsMatchAction({
         };
     }
 
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+        return {
+            error: "Job application not found",
+            data: null,
+        };
+    }
+
+    if (resumeId && !mongoose.Types.ObjectId.isValid(resumeId)) {
+        return {
+            error: "Resume not found",
+            data: null,
+        };
+    }
+
     await connectDB();
 
     const job = await JobApplication.findOne({
@@ -94,11 +109,11 @@ export async function runAtsMatchAction({
         };
     }
 
-    // Check quota before calling AI (do not consume yet)
-    const quotaCheck = await checkFeatureQuota(session.user.id, "atsScan");
-    if (!quotaCheck.allowed) {
+    // Reserve quota atomically before calling AI
+    const reserved = await consumeFeatureQuota(session.user.id, "atsScan");
+    if (!reserved.allowed) {
         return {
-            error: quotaCheck.error || "Usage limit reached for ATS Matcher.",
+            error: reserved.error || "Usage limit reached for ATS Matcher.",
             data: null,
         };
     }
@@ -128,8 +143,6 @@ export async function runAtsMatchAction({
 
         await job.save();
 
-        // Consume quota only after successful AI response and save
-        const consumed = await consumeFeatureQuota(session.user.id, "atsScan");
         revalidatePath("/dashboard");
 
         return {
@@ -137,11 +150,12 @@ export async function runAtsMatchAction({
             data: {
                 analysis: JSON.parse(JSON.stringify(job.atsAnalysis)),
                 job: JSON.parse(JSON.stringify(job)),
-                remaining: consumed.remaining,
-                limit: consumed.limit,
+                remaining: reserved.remaining,
+                limit: reserved.limit,
             },
         };
     } catch (err: unknown) {
+        await releaseFeatureQuota(session.user.id, "atsScan");
         return {
             error: formatAiErrorMessage(err, "Failed to run ATS analysis."),
             data: null,
@@ -165,6 +179,20 @@ export async function generateCoverLetterAction({
         };
     }
 
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+        return {
+            error: "Job application not found",
+            data: null,
+        };
+    }
+
+    if (resumeId && !mongoose.Types.ObjectId.isValid(resumeId)) {
+        return {
+            error: "Resume not found",
+            data: null,
+        };
+    }
+
     await connectDB();
 
     const job = await JobApplication.findOne({
@@ -188,11 +216,11 @@ export async function generateCoverLetterAction({
         };
     }
 
-    // Check quota before calling AI
-    const quotaCheck = await checkFeatureQuota(session.user.id, "coverLetter");
-    if (!quotaCheck.allowed) {
+    // Reserve quota atomically before calling AI
+    const reserved = await consumeFeatureQuota(session.user.id, "coverLetter");
+    if (!reserved.allowed) {
         return {
-            error: quotaCheck.error || "Usage limit reached for Cover Letter Generator.",
+            error: reserved.error || "Usage limit reached for Cover Letter Generator.",
             data: null,
         };
     }
@@ -208,19 +236,18 @@ export async function generateCoverLetterAction({
         job.aiCoverLetter = coverLetter;
         await job.save();
 
-        // Consume quota only after successful AI response and save
-        const consumed = await consumeFeatureQuota(session.user.id, "coverLetter");
         revalidatePath("/dashboard");
 
         return {
             error: null,
             data: {
                 coverLetter,
-                remaining: consumed.remaining,
-                limit: consumed.limit,
+                remaining: reserved.remaining,
+                limit: reserved.limit,
             },
         };
     } catch (err: unknown) {
+        await releaseFeatureQuota(session.user.id, "coverLetter");
         return {
             error: formatAiErrorMessage(err, "Failed to generate cover letter."),
             data: null,
@@ -244,6 +271,20 @@ export async function generateOutreachAction({
         };
     }
 
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+        return {
+            error: "Job application not found",
+            data: null,
+        };
+    }
+
+    if (resumeId && !mongoose.Types.ObjectId.isValid(resumeId)) {
+        return {
+            error: "Resume not found",
+            data: null,
+        };
+    }
+
     await connectDB();
 
     const job = await JobApplication.findOne({
@@ -267,11 +308,11 @@ export async function generateOutreachAction({
         };
     }
 
-    // Check quota before calling AI
-    const quotaCheck = await checkFeatureQuota(session.user.id, "outreach");
-    if (!quotaCheck.allowed) {
+    // Reserve quota atomically before calling AI
+    const reserved = await consumeFeatureQuota(session.user.id, "outreach");
+    if (!reserved.allowed) {
         return {
-            error: quotaCheck.error || "Usage limit reached for Cold Outreach Generator.",
+            error: reserved.error || "Usage limit reached for Cold Outreach Generator.",
             data: null,
         };
     }
@@ -287,19 +328,18 @@ export async function generateOutreachAction({
         job.aiOutreachMessage = outreachMessage;
         await job.save();
 
-        // Consume quota only after successful AI response and save
-        const consumed = await consumeFeatureQuota(session.user.id, "outreach");
         revalidatePath("/dashboard");
 
         return {
             error: null,
             data: {
                 outreachMessage,
-                remaining: consumed.remaining,
-                limit: consumed.limit,
+                remaining: reserved.remaining,
+                limit: reserved.limit,
             },
         };
     } catch (err: unknown) {
+        await releaseFeatureQuota(session.user.id, "outreach");
         return {
             error: formatAiErrorMessage(err, "Failed to generate outreach message."),
             data: null,

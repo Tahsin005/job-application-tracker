@@ -20,23 +20,27 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface RichTextEditorProps {
+    id?: string;
     value?: string;
     onChange?: (value: string) => void;
     placeholder?: string;
     className?: string;
     minHeight?: string;
     disabled?: boolean;
+    "aria-label"?: string;
 }
 
 const emptySubscribe = () => () => { };
 
 export function RichTextEditor({
+    id,
     value = "",
     onChange,
     placeholder = "Add job description, requirements, responsibilities, or paste directly...",
     className,
     minHeight = "160px",
     disabled = false,
+    "aria-label": ariaLabel,
 }: RichTextEditorProps) {
     const isMounted = useSyncExternalStore(
         emptySubscribe,
@@ -56,6 +60,13 @@ export function RichTextEditor({
                 emptyEditorClass: "is-editor-empty",
             }),
         ],
+        editorProps: {
+            attributes: {
+                ...(id ? { id } : {}),
+                ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
+                class: "focus:outline-none",
+            },
+        },
         content: value,
         editable: !disabled,
         immediatelyRender: false,
@@ -92,6 +103,7 @@ export function RichTextEditor({
     if (!isMounted || !editor) {
         return (
             <div
+                id={id}
                 className={cn(
                     "w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm text-muted-foreground/60 transition-colors",
                     className

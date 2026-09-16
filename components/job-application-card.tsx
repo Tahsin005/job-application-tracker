@@ -347,6 +347,7 @@ export default function JobApplicationCard({
                                             control={control}
                                             render={({ field }) => (
                                                 <RichTextEditor
+                                                    id="edit-description"
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     placeholder="Paste the role details, responsibilities, or requirements..."

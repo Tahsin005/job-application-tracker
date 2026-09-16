@@ -167,6 +167,7 @@ export default function CreateJobApplicationDialog({
                                 control={control}
                                 render={({ field }) => (
                                     <RichTextEditor
+                                        id="create-description"
                                         value={field.value}
                                         onChange={field.onChange}
                                         placeholder="Paste the role details, responsibilities, or requirements..."
