@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { getAdminUsersAction } from "@/lib/actions/admin";
-import { Search, ArrowRight, ShieldCheck, User as UserIcon, ChevronLeft, ChevronRight, Briefcase, FileText } from "lucide-react";
+import { Search, ArrowRight, ShieldCheck, User as UserIcon, ChevronLeft, ChevronRight, Briefcase, FileText, Calendar } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,9 +80,110 @@ async function UsersListContent({
 
 
             <Card className="border-slate-200 bg-white shadow-xs overflow-hidden">
-                <div className="overflow-x-auto">
+
+                <div className="divide-y divide-slate-100 lg:hidden">
+                    {users.length === 0 ? (
+                        <div className="px-6 py-12 text-center text-slate-500">
+                            <UserIcon className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                            No users found matching your criteria.
+                        </div>
+                    ) : (
+                        users.map((u) => (
+                            <div key={u.id} className="p-4 sm:p-5 space-y-3.5 hover:bg-slate-50/50 transition-colors">
+
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-10 w-10">
+                                            {u.image && <AvatarImage src={u.image} alt={u.name} />}
+                                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                                                {u.name.charAt(0).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-semibold text-slate-900 leading-snug">
+                                                {u.name}
+                                            </p>
+                                            <p className="text-xs text-slate-500 break-all">{u.email}</p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        {u.isAdmin ? (
+                                            <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 border text-[11px] font-semibold gap-1">
+                                                <ShieldCheck className="h-3 w-3" />
+                                                Admin
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-slate-600 bg-slate-50 border-slate-200 text-[11px]">
+                                                User
+                                            </Badge>
+                                        )}
+                                    </div>
+                                </div>
+
+
+                                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50/80 p-2.5 rounded-lg border border-slate-100">
+                                    <div>
+                                        <span className="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">Activity</span>
+                                        <div className="flex items-center gap-2 mt-0.5 text-slate-700 font-medium text-xs">
+                                            <span className="flex items-center gap-1">
+                                                <Briefcase className="h-3.5 w-3.5 text-slate-400" />
+                                                {u.jobCount} jobs
+                                            </span>
+                                            <span>•</span>
+                                            <span className="flex items-center gap-1">
+                                                <FileText className="h-3.5 w-3.5 text-slate-400" />
+                                                {u.resumeCount} resumes
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span className="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">Joined Date</span>
+                                        <div className="flex items-center gap-1 mt-0.5 text-slate-700 font-medium text-xs">
+                                            <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                                            {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "N/A"}
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div className="space-y-1.5">
+                                    <span className="text-[10px] uppercase tracking-wider text-slate-400 block font-semibold">AI Quota (Used / Limit)</span>
+                                    <div className="flex flex-wrap gap-1.5 text-[11px]">
+                                        <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100 font-medium">
+                                            ATS: {u.usage.atsScanUsed}/{u.usage.atsScanLimit}
+                                        </span>
+                                        <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-100 font-medium">
+                                            Cover: {u.usage.coverLetterUsed}/{u.usage.coverLetterLimit}
+                                        </span>
+                                        <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-100 font-medium">
+                                            Outreach: {u.usage.outreachUsed}/{u.usage.outreachLimit}
+                                        </span>
+                                    </div>
+                                </div>
+
+
+                                <div className="pt-1">
+                                    <Link href={`/admin/users/${u.id}`} className="block">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="w-full justify-center gap-1.5 text-xs text-primary border-primary/20 hover:bg-primary/5 hover:text-primary font-medium h-9"
+                                        >
+                                            Manage Quota & Stats
+                                            <ArrowRight className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+
+                <div className="hidden lg:block overflow-x-auto">
                     <table className="w-full text-left text-sm text-slate-600">
-                        <thead className="bg-slate-50/80 text-xs uppercase font-semibold text-slate-500 border-b border-slate-100">
+                        <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-100">
                             <tr>
                                 <th className="px-6 py-3.5">User</th>
                                 <th className="px-6 py-3.5">Role</th>
@@ -185,7 +286,7 @@ async function UsersListContent({
 
 
                 {pagination.totalPages > 1 && (
-                    <div className="border-t border-slate-100 px-6 py-4 flex items-center justify-between">
+                    <div className="border-t border-slate-100 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
                         <p className="text-xs text-slate-500">
                             Showing page <span className="font-semibold">{pagination.page}</span> of{" "}
                             <span className="font-semibold">{pagination.totalPages}</span> ({pagination.totalCount} total users)

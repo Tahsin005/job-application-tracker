@@ -67,9 +67,10 @@ export default function QuotaEditorCard({
     };
 
     const handleAddBonus = (amount = 5) => {
-        setValue("atsScanLimit", Number(watchedAtsLimit) + amount, { shouldValidate: true, shouldDirty: true });
-        setValue("coverLetterLimit", Number(watchedCoverLimit) + amount, { shouldValidate: true, shouldDirty: true });
-        setValue("outreachLimit", Number(watchedOutreachLimit) + amount, { shouldValidate: true, shouldDirty: true });
+        const safe = (v: unknown) => (Number.isFinite(Number(v)) && v !== "" ? Number(v) : 0);
+        setValue("atsScanLimit", safe(watchedAtsLimit) + amount, { shouldValidate: true, shouldDirty: true });
+        setValue("coverLetterLimit", safe(watchedCoverLimit) + amount, { shouldValidate: true, shouldDirty: true });
+        setValue("outreachLimit", safe(watchedOutreachLimit) + amount, { shouldValidate: true, shouldDirty: true });
         toast.info(`Added +${amount} to all feature limits in form. Click 'Save Changes' to apply.`);
     };
 

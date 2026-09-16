@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getAdminUserDetailsAction } from "@/lib/actions/admin";
 import { ArrowLeft, Briefcase, FileText, Calendar, ShieldCheck, BarChart3 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -36,6 +36,12 @@ async function UserDetailContent({ params }: UserDetailPageProps) {
     const res = await getAdminUserDetailsAction(id);
 
     if (res.error || !res.data) {
+        if (res.error?.toLowerCase().includes("unauthorized")) {
+            redirect("/sign-in");
+        }
+        if (res.error?.toLowerCase().includes("forbidden")) {
+            redirect("/dashboard");
+        }
         notFound();
     }
 

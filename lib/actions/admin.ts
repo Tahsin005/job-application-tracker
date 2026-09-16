@@ -28,6 +28,10 @@ async function verifyAdmin(): Promise<AdminAuthResult> {
     return { authorized: true, error: null };
 }
 
+function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export async function getAdminUsersAction({
     page = 1,
     limit = 10,
@@ -42,7 +46,6 @@ export async function getAdminUsersAction({
         return { error: authCheck.error, data: null };
     }
 
-    await connectDB();
     const mongooseInstance = await connectDB();
     const db = mongooseInstance.connection.db;
 
@@ -54,11 +57,12 @@ export async function getAdminUsersAction({
     const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
     const skip = (safePage - 1) * safeLimit;
 
-    const queryFilter = search.trim()
+    const sanitizedSearch = search.trim();
+    const queryFilter = sanitizedSearch
         ? {
               $or: [
-                  { name: { $regex: search.trim(), $options: "i" } },
-                  { email: { $regex: search.trim(), $options: "i" } },
+                  { name: { $regex: escapeRegex(sanitizedSearch), $options: "i" } },
+                  { email: { $regex: escapeRegex(sanitizedSearch), $options: "i" } },
               ],
           }
         : {};
@@ -230,7 +234,13 @@ export async function updateAdminUserUsageAction(rawInput: UpdateUserUsageInput)
         };
     }
 
-    await connectDB();
+    const mongooseInstance = await connectDB();
+    const db = mongooseInstance.connection.db;
+
+    if (!db) {
+        return { error: "Database connection failed", data: null };
+    }
+
     const {
         userId,
         atsScanCount,
@@ -241,8 +251,22 @@ export async function updateAdminUserUsageAction(rawInput: UpdateUserUsageInput)
         outreachLimit,
     } = parsed.data;
 
+    let userQuery: Record<string, unknown> = { _id: userId };
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+        userQuery = {
+            $or: [{ _id: new mongoose.Types.ObjectId(userId) }, { _id: userId }],
+        };
+    }
+
+    const existingUser = await db.collection("user").findOne(userQuery);
+    if (!existingUser) {
+        return { error: "Cannot update quota: Target user does not exist", data: null };
+    }
+
+    const resolvedUserId = existingUser._id.toString();
+
     const updated = await UserUsage.findOneAndUpdate(
-        { userId },
+        { userId: resolvedUserId },
         {
             $set: {
                 atsScanCount,

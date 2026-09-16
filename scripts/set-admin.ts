@@ -4,7 +4,10 @@ dotenv.config({ path: ".env" });
 import connectDB from "../lib/db";
 
 async function setAdmin() {
-    const targetEmail = process.env.TARGET_EMAIL || "tahsin.ferdous3546@gmail.com";
+    const targetEmail = process.env.TARGET_EMAIL?.trim();
+    if (!targetEmail) {
+        throw new Error("TARGET_EMAIL environment variable must be set.");
+    }
 
     console.log(`Connecting to database to promote ${targetEmail} to admin...`);
 

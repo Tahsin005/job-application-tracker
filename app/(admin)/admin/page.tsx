@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/auth";
 import connectDB from "@/lib/db";
 import Link from "next/link";
-import { Users, FileText, Briefcase, ShieldCheck, Sparkles, Server, ArrowRight } from "lucide-react";
+import { Users, FileText, Briefcase, ShieldCheck, ArrowRight } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
