@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const createJobApplicationSchema = z.object({
-    company: z.string().min(1, "Company name is required").trim(),
-    position: z.string().min(1, "Position title is required").trim(),
+    company: z.string().trim().min(1, "Company name is required"),
+    position: z.string().trim().min(1, "Position title is required"),
     location: z.string().optional().default(""),
     salary: z.string().optional().default(""),
     jobUrl: z
@@ -23,8 +23,8 @@ export const createJobApplicationSchema = z.object({
 export type CreateJobApplicationInput = z.infer<typeof createJobApplicationSchema>;
 
 export const updateJobApplicationSchema = z.object({
-    company: z.string().min(1, "Company name is required").trim(),
-    position: z.string().min(1, "Position title is required").trim(),
+    company: z.string().trim().min(1, "Company name is required"),
+    position: z.string().trim().min(1, "Position title is required"),
     location: z.string().optional().default(""),
     salary: z.string().optional().default(""),
     jobUrl: z

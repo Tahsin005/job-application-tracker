@@ -191,6 +191,7 @@ function SortableJobCard({
 export default function KanbanBoard({ board }: KanbanBoardProps) {
     const {
         columns,
+        rawColumns,
         moveJob,
         activeId,
         setActiveId,
@@ -199,6 +200,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
     } = useBoardFacade(board);
 
     const sortedColumns = [...(columns || [])].sort((a, b) => a.order - b.order);
+    const orderColumns = [...(rawColumns || [])].sort((a, b) => a.order - b.order);
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -226,7 +228,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
         let sourceColumn: Column | null = null;
         let sourceIndex = -1;
 
-        for (const column of sortedColumns) {
+        for (const column of orderColumns) {
             const jobs = [...(column.jobApplications || [])].sort((a, b) => a.order - b.order);
             const jobIndex = jobs.findIndex((j) => j._id === activeId);
             if (jobIndex !== -1) {
@@ -240,8 +242,8 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
         if (!draggedJob || !sourceColumn) return;
 
         // Check if dropped in a column or another job
-        const targetColumn = sortedColumns.find((col) => col._id === overId);
-        const targetJob = sortedColumns
+        const targetColumn = orderColumns.find((col) => col._id === overId);
+        const targetJob = orderColumns
             .flatMap((col) => col.jobApplications || [])
             .find((job) => job._id === overId);
 
@@ -256,13 +258,13 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
                     .sort((a, b) => a.order - b.order) || [];
             newOrder = jobsInTarget.length;
         } else if (targetJob) {
-            const targetJobColumn = sortedColumns.find((col) =>
+            const targetJobColumn = orderColumns.find((col) =>
                 col.jobApplications.some((j) => j._id === targetJob._id)
             );
             targetColumnId = targetJob.columnId || targetJobColumn?._id || "";
             if (!targetColumnId) return;
 
-            const targetColumnObj = sortedColumns.find(
+            const targetColumnObj = orderColumns.find(
                 (col) => col._id === targetColumnId
             );
 
@@ -306,7 +308,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
         await moveJob(activeId, targetColumnId, newOrder);
     }
 
-    const activeJob = sortedColumns
+    const activeJob = orderColumns
         .flatMap((col) => col.jobApplications || [])
         .find((job) => job._id === activeId);
 

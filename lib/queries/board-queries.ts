@@ -165,8 +165,12 @@ export function useMoveJobMutation() {
                         targetCol.jobApplications.splice(newOrder, 0, {
                             ...jobToMove,
                             columnId: newColumnId,
-                            order: newOrder * 100,
+                            order: newOrder,
                         });
+                        targetCol.jobApplications = targetCol.jobApplications.map((job, idx) => ({
+                            ...job,
+                            order: idx,
+                        }));
                     }
                 }
 

@@ -78,7 +78,8 @@ export default function JobApplicationCard({
                 description: job.description || "",
             });
         }
-    }, [isEditing, job, reset]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isEditing, reset]);
 
     async function onUpdateSubmit(data: UpdateJobApplicationInput) {
         try {

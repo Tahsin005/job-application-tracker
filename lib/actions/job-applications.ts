@@ -329,10 +329,11 @@ export async function getUserBoard() {
     });
 
     if (!boardDoc) {
-        return { data: null };
+        return { error: null, data: null };
     }
 
     return {
+        error: null,
         data: JSON.parse(JSON.stringify(boardDoc)),
     };
 }
