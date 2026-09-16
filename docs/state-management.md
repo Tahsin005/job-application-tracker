@@ -105,3 +105,29 @@ const { columns, rawColumns, moveJob } = useBoardFacade(board);
 ```
 - **`columns`**: Use **strictly for rendering** UI cards. When a search filter is applied, this list is truncated to matching items.
 - **`rawColumns`**: Use **strictly for drag-and-drop calculation** (`handleDragEnd`). Index math and position calculations MUST be computed against the full set of applications, otherwise dragging a card during an active search filter will write corrupted index orders to the database.
+
+---
+
+## 4. The AI & Resume Intelligence Facade (`lib/facades/useAiResumeFacade.ts`)
+
+UI components needing resume library management or AI intelligence (ATS matching, cover letters, outreach, quotas) interact through `useAiResumeFacade`.
+
+### Query Keys (`lib/queries/ai-queries.ts`)
+```ts
+export const aiKeys = {
+    all: ["ai"] as const,
+    resumes: () => [...aiKeys.all, "resumes"] as const,
+    usage: () => [...aiKeys.all, "usage"] as const,
+};
+```
+
+### Key Responsibilities
+1. **Reads Asynchronous State**: Subscribes to `useUserResumesQuery` and `useUserUsageQuery` with automatic caching.
+2. **Encapsulates Operations with Feedback**:
+   - `runAtsMatch(jobId, resumeId)`: Triggers GLM-5.3 ATS scan, persists analysis to job, and invalidates `boardKeys.all` + `aiKeys.usage()`.
+   - `generateCoverLetter(jobId, resumeId)`: Generates tailored 3-paragraph letter.
+   - `generateOutreach(jobId, resumeId)`: Crafts recruiter LinkedIn/email message.
+   - `createResume(input)`: Saves resume (PDF or text) to user's library and invalidates `aiKeys.resumes()`.
+   - `attachResume(jobId, resumeId)`: Links a specific resume version to a job application.
+   - `extractPdfText(file)`: Server-side PDF extraction via `unpdf`.
+

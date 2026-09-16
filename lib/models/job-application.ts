@@ -1,5 +1,15 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+export interface IAtsAnalysis {
+    score: number;
+    missingKeywords: string[];
+    matchedKeywords: string[];
+    actionVerbRecommendations: string[];
+    summary: string;
+    analyzedAt: Date;
+    resumeName?: string;
+}
+
 export interface IJobApplication extends Document {
     company: string;
     position: string;
@@ -15,6 +25,11 @@ export interface IJobApplication extends Document {
     appliedDate?: Date;
     tags?: string[];
     description?: string;
+    resumeId?: mongoose.Types.ObjectId;
+    attachedResumeName?: string;
+    atsAnalysis?: IAtsAnalysis;
+    aiCoverLetter?: string;
+    aiOutreachMessage?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -77,6 +92,28 @@ const JobApplicationSchema = new Schema<IJobApplication>(
             },
         ],
         description: {
+            type: String,
+        },
+        resumeId: {
+            type: Schema.Types.ObjectId,
+            ref: "Resume",
+        },
+        attachedResumeName: {
+            type: String,
+        },
+        atsAnalysis: {
+            score: { type: Number },
+            missingKeywords: [{ type: String }],
+            matchedKeywords: [{ type: String }],
+            actionVerbRecommendations: [{ type: String }],
+            summary: { type: String },
+            analyzedAt: { type: Date },
+            resumeName: { type: String },
+        },
+        aiCoverLetter: {
+            type: String,
+        },
+        aiOutreachMessage: {
             type: String,
         },
     },
