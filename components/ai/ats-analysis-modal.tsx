@@ -593,12 +593,12 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
 
 
                     {activeTab === "resume" && (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             <div>
                                 <h3 className="text-sm font-bold text-slate-900">
                                     Resume Version for this Application
                                 </h3>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-slate-500 mt-1">
                                     Track exactly which resume file/version was submitted for {job.company}.
                                 </p>
                             </div>
@@ -617,44 +617,57 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                                 </div>
                             </div>
 
-                            <div className="space-y-2 pt-2">
-                                <span className="text-xs font-semibold text-slate-800">
+                            <div className="space-y-3 pt-2">
+                                <span className="text-xs font-semibold text-slate-800 block">
                                     Change Attached Version:
                                 </span>
-                                <div className="space-y-2">
+                                <div className="space-y-3">
                                     {resumes.map((r) => (
                                         <div
                                             key={r._id}
                                             onClick={() => setSelectedResumeId(r._id)}
-                                            className={`p-3 rounded-lg border cursor-pointer flex items-center justify-between transition-all ${selectedResumeId === r._id
-                                                    ? "border-indigo-500 bg-indigo-50/40 ring-1 ring-indigo-500"
-                                                    : "border-slate-200 bg-white hover:border-slate-300"
+                                            className={`py-3.5 px-4 rounded-xl border cursor-pointer flex items-center justify-between transition-all min-h-[56px] ${selectedResumeId === r._id
+                                                    ? "border-indigo-500 bg-indigo-50/40 ring-1 ring-indigo-500 shadow-xs"
+                                                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
                                                 }`}
                                         >
-                                            <div className="flex items-center gap-2.5">
-                                                <FileText className="size-4 text-slate-500" />
-                                                <span className="text-xs font-medium text-slate-800">
-                                                    {r.name}
-                                                </span>
-                                                {r.isDefault && (
-                                                    <Badge variant="outline" className="text-[10px]">
-                                                        Default
-                                                    </Badge>
-                                                )}
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-2 rounded-lg shrink-0 ${selectedResumeId === r._id ? "bg-indigo-100 text-indigo-700" : "bg-slate-100 text-slate-500"}`}>
+                                                    <FileText className="size-4" />
+                                                </div>
+                                                <div className="space-y-0.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-semibold text-slate-900">
+                                                            {r.name}
+                                                        </span>
+                                                        {r.isDefault && (
+                                                            <Badge variant="outline" className="text-[10px] font-medium bg-slate-50 border-slate-200">
+                                                                Default
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    {r.updatedAt && (
+                                                        <span className="text-[11px] text-slate-400 block">
+                                                            Updated {new Date(r.updatedAt).toLocaleDateString()}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                             {selectedResumeId === r._id && (
-                                                <Check className="size-4 text-indigo-600" />
+                                                <div className="size-6 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 ml-3">
+                                                    <Check className="size-3.5" />
+                                                </div>
                                             )}
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="flex justify-end pt-3">
+                                <div className="flex justify-end pt-5">
                                     <Button
                                         onClick={handleAttachResume}
                                         disabled={!selectedResumeId || selectedResumeId === job.resumeId}
                                         size="sm"
-                                        className="gap-1.5"
+                                        className="gap-1.5 h-9 px-4 font-medium"
                                     >
                                         <Check className="size-3.5" />
                                         Save Attached Version

@@ -36,6 +36,11 @@ export default function AdminLayout({
                                     Users Directory
                                 </Button>
                             </Link>
+                            <Link href="/admin/ai">
+                                <Button variant="ghost" size="sm" className="text-xs text-slate-600 hover:text-slate-900">
+                                    AI Management
+                                </Button>
+                            </Link>
                         </nav>
                     </div>
 

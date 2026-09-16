@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/auth";
 import connectDB from "@/lib/db";
 import Link from "next/link";
-import { Users, FileText, Briefcase, ShieldCheck, ArrowRight } from "lucide-react";
+import { Users, FileText, Briefcase, ShieldCheck, ArrowRight, Cpu } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AiProviderFactory } from "@/lib/ai/factory/ai-provider-factory";
 
 async function AdminDashboardContent() {
     const session = await getSession();
@@ -31,6 +32,8 @@ async function AdminDashboardContent() {
         jobCount = await db.collection("jobapplications").countDocuments();
         resumeCount = await db.collection("resumes").countDocuments();
     }
+
+    const activeAi = await AiProviderFactory.getActiveConfig();
 
     return (
         <div className="space-y-6">
@@ -88,13 +91,13 @@ async function AdminDashboardContent() {
             </Card>
 
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Link href="/admin/users" className="block group">
-                    <Card className="border-slate-200 bg-white shadow-xs group-hover:border-primary/50 group-hover:shadow-sm transition-all">
+                    <Card className="border-slate-200 bg-white shadow-xs group-hover:border-primary/50 group-hover:shadow-sm transition-all h-full">
                         <CardContent className="p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-xs font-semibold text-slate-500 tracking-wider group-hover:text-primary transition-colors">
-                                    Total Registered Users
+                                    Total Users
                                 </p>
                                 <h3 className="text-3xl font-bold text-slate-900 mt-2">{userCount}</h3>
                                 <p className="text-xs text-primary font-medium mt-1 flex items-center gap-1">
@@ -111,7 +114,7 @@ async function AdminDashboardContent() {
                 <Card className="border-slate-200 bg-white shadow-xs">
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
-                            <p className="text-xs font-semibold text-slate-500 tracking-wider">Job Applications Tracked</p>
+                            <p className="text-xs font-semibold text-slate-500 tracking-wider">Job Applications</p>
                             <h3 className="text-3xl font-bold text-slate-900 mt-2">{jobCount}</h3>
                         </div>
                         <div className="h-12 w-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -131,6 +134,27 @@ async function AdminDashboardContent() {
                         </div>
                     </CardContent>
                 </Card>
+
+                <Link href="/admin/ai" className="block group">
+                    <Card className="border-slate-200 bg-white shadow-xs group-hover:border-primary/50 group-hover:shadow-sm transition-all h-full">
+                        <CardContent className="p-6 flex items-center justify-between">
+                            <div className="min-w-0 flex-1 pr-2">
+                                <p className="text-xs font-semibold text-slate-500 tracking-wider group-hover:text-primary transition-colors truncate">
+                                    Active AI Provider
+                                </p>
+                                <h3 className="text-lg font-bold text-slate-900 mt-2 truncate font-mono">
+                                    {activeAi.config.model}
+                                </h3>
+                                <p className="text-xs text-primary font-medium mt-1 flex items-center gap-1">
+                                    Manage AI <ArrowRight className="h-3 w-3" />
+                                </p>
+                            </div>
+                            <div className="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+                                <Cpu className="h-6 w-6" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
             </div>
         </div>
     );

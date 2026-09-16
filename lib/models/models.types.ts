@@ -76,3 +76,52 @@ export interface User {
     createdAt?: string | Date;
     updatedAt?: string | Date;
 }
+
+export type AiProviderType =
+    | "agentrouter"
+    | "openai"
+    | "anthropic"
+    | "groq"
+    | "gemini"
+    | "custom"
+    | (string & {});
+
+export interface AiConfig {
+    _id: string;
+    name: string;
+    provider: AiProviderType;
+    baseUrl?: string;
+    apiKey?: string;
+    model: string;
+    isDefault: boolean;
+    isActive: boolean;
+    customHeaders?: Record<string, string>;
+    description?: string;
+    options?: Record<string, unknown>;
+    metadata?: Record<string, unknown>;
+    lastTestedAt?: string | Date;
+    lastLatencyMs?: number;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+    [key: string]: unknown;
+}
+
+export interface AiTestResult {
+    success: boolean;
+    latencyMs: number;
+    message: string;
+    modelOutput?: string;
+}
+
+export interface AiPromptItem {
+    action: string;
+    name: string;
+    description?: string;
+    systemPrompt: string;
+    userPromptTemplate: string;
+    isCustomized: boolean;
+    supportedVariables: { key: string; label: string }[];
+    updatedAt?: string | Date;
+    [key: string]: unknown;
+}
+
