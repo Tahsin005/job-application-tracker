@@ -7,6 +7,7 @@ import connectDB from "../db";
 import {
     JobApplication,
     consumeFeatureQuota,
+    releaseFeatureQuota,
     getUserQuotaSummary,
 } from "../models";
 import { processAiTask, resolveResumeForJob } from "../ai/ai-processor";
@@ -80,12 +81,26 @@ export async function runAtsMatchAction({
         step: "Job queued in background",
     });
 
-    const dispatch = await publishAiTask({
-        type: "atsScan",
-        jobId,
-        resumeId: resume._id.toString(),
-        userId: session.user.id,
-    });
+    let dispatch;
+    try {
+        dispatch = await publishAiTask({
+            type: "atsScan",
+            jobId,
+            resumeId: resume._id.toString(),
+            userId: session.user.id,
+        });
+    } catch (err) {
+        console.error("Failed to queue ATS task:", err);
+        await releaseFeatureQuota(session.user.id, "atsScan");
+        await setAiJobStatus("atsScan", jobId, {
+            status: "failed",
+            error: "Failed to queue ATS analysis. Please try again.",
+        });
+        return {
+            error: "Failed to queue ATS analysis. Please try again.",
+            data: null,
+        };
+    }
 
     if (dispatch.mode === "direct") {
         const res = await processAiTask({
@@ -194,12 +209,26 @@ export async function generateCoverLetterAction({
         step: "Job queued in background",
     });
 
-    const dispatch = await publishAiTask({
-        type: "coverLetter",
-        jobId,
-        resumeId: resume._id.toString(),
-        userId: session.user.id,
-    });
+    let dispatch;
+    try {
+        dispatch = await publishAiTask({
+            type: "coverLetter",
+            jobId,
+            resumeId: resume._id.toString(),
+            userId: session.user.id,
+        });
+    } catch (err) {
+        console.error("Failed to queue cover letter task:", err);
+        await releaseFeatureQuota(session.user.id, "coverLetter");
+        await setAiJobStatus("coverLetter", jobId, {
+            status: "failed",
+            error: "Failed to queue cover letter generation. Please try again.",
+        });
+        return {
+            error: "Failed to queue cover letter generation. Please try again.",
+            data: null,
+        };
+    }
 
     if (dispatch.mode === "direct") {
         const res = await processAiTask({
@@ -308,12 +337,26 @@ export async function generateOutreachAction({
         step: "Job queued in background",
     });
 
-    const dispatch = await publishAiTask({
-        type: "outreach",
-        jobId,
-        resumeId: resume._id.toString(),
-        userId: session.user.id,
-    });
+    let dispatch;
+    try {
+        dispatch = await publishAiTask({
+            type: "outreach",
+            jobId,
+            resumeId: resume._id.toString(),
+            userId: session.user.id,
+        });
+    } catch (err) {
+        console.error("Failed to queue outreach task:", err);
+        await releaseFeatureQuota(session.user.id, "outreach");
+        await setAiJobStatus("outreach", jobId, {
+            status: "failed",
+            error: "Failed to queue outreach message generation. Please try again.",
+        });
+        return {
+            error: "Failed to queue outreach message generation. Please try again.",
+            data: null,
+        };
+    }
 
     if (dispatch.mode === "direct") {
         const res = await processAiTask({

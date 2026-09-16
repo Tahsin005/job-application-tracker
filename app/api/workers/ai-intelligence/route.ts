@@ -8,27 +8,31 @@ export async function POST(req: NextRequest) {
     try {
         const bodyText = await req.text();
 
-        // If QStash receiver keys are configured, verify the signature
-        if (qstashReceiver && process.env.NODE_ENV === "production") {
-            const signature = req.headers.get("upstash-signature");
-            if (!signature) {
-                return NextResponse.json(
-                    { error: "Missing Upstash signature" },
-                    { status: 401 }
-                );
-            }
+        if (!qstashReceiver) {
+            console.error("QStash signing keys are not configured");
+            return NextResponse.json(
+                { error: "Worker not configured" },
+                { status: 503 }
+            );
+        }
 
-            const isValid = await qstashReceiver.verify({
-                signature,
-                body: bodyText,
-            });
+        const signature = req.headers.get("upstash-signature");
+        if (!signature) {
+            return NextResponse.json(
+                { error: "Missing Upstash signature" },
+                { status: 401 }
+            );
+        }
 
-            if (!isValid) {
-                return NextResponse.json(
-                    { error: "Invalid signature" },
-                    { status: 401 }
-                );
-            }
+        const isValid = await qstashReceiver
+            .verify({ signature, body: bodyText })
+            .catch(() => false);
+
+        if (!isValid) {
+            return NextResponse.json(
+                { error: "Invalid signature" },
+                { status: 401 }
+            );
         }
 
         const payload = JSON.parse(bodyText) as AiTaskPayload;

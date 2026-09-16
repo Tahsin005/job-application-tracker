@@ -41,25 +41,36 @@ export function useAiResumeFacade() {
         const maxPolls = 40; // 40 * 1.5s = 60s
         for (let i = 0; i < maxPolls; i++) {
             await new Promise((resolve) => setTimeout(resolve, 1500));
+            let status: { status?: string; step?: string; error?: string; data?: unknown } | null = null;
             try {
                 const res = await fetch(`/api/ai/job-status?jobId=${jobId}&type=${type}`);
                 if (res.ok) {
-                    const json = await res.json();
-                    const status = json.data;
-                    if (status?.status === "completed") {
-                        await queryClient.invalidateQueries({ queryKey: boardKeys.all });
-                        await queryClient.invalidateQueries({ queryKey: aiKeys.usage() });
-                        return status.data;
-                    }
-                    if (status?.status === "failed") {
-                        throw new Error(status.error || "Background processing failed");
-                    }
-                    if (status?.step) {
-                        toast.loading(status.step, { id: toastId });
-                    }
+                    status = (await res.json()).data ?? null;
+                } else if (res.status === 401 || res.status === 404) {
+                    const json = await res.json().catch(() => null);
+                    throw new Error(json?.error || "Unauthorized or job not found");
                 }
             } catch (err) {
-                if (i === maxPolls - 1) throw err;
+                if (
+                    i === maxPolls - 1 ||
+                    (err instanceof Error &&
+                        (err.message.includes("Unauthorized") || err.message.includes("not found")))
+                ) {
+                    throw err;
+                }
+                continue;
+            }
+
+            if (status?.status === "completed") {
+                await queryClient.invalidateQueries({ queryKey: boardKeys.all });
+                await queryClient.invalidateQueries({ queryKey: aiKeys.usage() });
+                return status.data;
+            }
+            if (status?.status === "failed") {
+                throw new Error(status.error || "Background processing failed");
+            }
+            if (status?.step) {
+                toast.loading(status.step, { id: toastId });
             }
         }
         throw new Error("Background processing timed out. Please refresh in a moment.");
