@@ -17,7 +17,7 @@ export const testAiPlaygroundSchema = z.object({
     customHeaders: z.record(z.string(), z.string()).optional(),
     options: z.record(z.string(), z.unknown()).optional(),
     metadata: z.record(z.string(), z.unknown()).optional(),
-}).passthrough();
+});
 
 export type TestAiPlaygroundInput = z.infer<typeof testAiPlaygroundSchema>;
 
@@ -34,6 +34,6 @@ export const saveAiConfigSchema = z.object({
     description: z.string().trim().optional(),
     options: z.record(z.string(), z.unknown()).optional(),
     metadata: z.record(z.string(), z.unknown()).optional(),
-}).passthrough();
+});
 
 export type SaveAiConfigInput = z.infer<typeof saveAiConfigSchema>;

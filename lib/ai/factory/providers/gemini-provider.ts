@@ -19,10 +19,9 @@ export class GeminiProvider implements IAiProvider {
             "https://generativelanguage.googleapis.com/v1beta"
         ).replace(/\/+$/, "");
 
-        const apiKey = encodeURIComponent(this.config.apiKey?.trim() || "");
         const cleanModel = encodeURIComponent(model.trim());
 
-        return `${cleanBase}/models/${cleanModel}:generateContent?key=${apiKey}`;
+        return `${cleanBase}/models/${cleanModel}:generateContent`;
     }
 
     async chat(messages: AiChatMessage[], options: AiChatOptions = {}): Promise<string> {

@@ -122,10 +122,13 @@ export function interpolatePrompt(
 ): string {
     let result = template;
     for (const [key, value] of Object.entries(vars)) {
+        const safeKey = key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         // Replace both {{key}} and ${key} syntax
-        const doubleBraceRegex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, "g");
-        const dollarBraceRegex = new RegExp(`\\$\\{\\s*${key}\\s*\\}`, "g");
-        result = result.replace(doubleBraceRegex, value).replace(dollarBraceRegex, value);
+        const doubleBraceRegex = new RegExp(`\\{\\{\\s*${safeKey}\\s*\\}\\}`, "g");
+        const dollarBraceRegex = new RegExp(`\\$\\{\\s*${safeKey}\\s*\\}`, "g");
+        result = result
+            .replace(doubleBraceRegex, () => value)
+            .replace(dollarBraceRegex, () => value);
     }
     return result;
 }

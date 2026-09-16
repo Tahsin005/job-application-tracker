@@ -29,7 +29,6 @@ interface ConfigItem {
     name: string;
     provider: string;
     baseUrl: string;
-    apiKey?: string;
     maskedApiKey: string;
     model: string;
     isDefault: boolean;
@@ -164,8 +163,8 @@ export default function AiConfigsList({
 
                                                 <div className="flex items-center gap-1.5 text-slate-600">
                                                     <Key className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                                                    <span className="font-mono text-slate-600 truncate" title={c.apiKey || c.maskedApiKey}>
-                                                        {c.apiKey || c.maskedApiKey}
+                                                    <span className="font-mono text-slate-500 truncate" title={c.maskedApiKey}>
+                                                        {c.maskedApiKey}
                                                     </span>
                                                 </div>
                                             </div>

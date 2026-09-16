@@ -46,7 +46,7 @@ async function AdminAiContent() {
 
 
             <Card className="border-slate-200 bg-white shadow-xs overflow-hidden">
-                <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 border-b border-slate-100">
+                <div className="p-5 sm:p-6 border-b border-slate-100">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-3.5">
                             <div className="h-12 w-12 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs">

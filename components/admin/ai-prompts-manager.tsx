@@ -111,14 +111,12 @@ export default function AiPromptsManager({
         if (!currentPrompt) return;
         const success = await resetPrompt(currentPrompt.action, currentPrompt.name);
         if (success) {
-            // Revert draft to default
-            setDrafts((prev) => ({
-                ...prev,
-                [currentPrompt.action]: {
-                    systemPrompt: currentPrompt.systemPrompt,
-                    userPromptTemplate: currentPrompt.userPromptTemplate,
-                },
-            }));
+            // Delete draft key so currentDraft cleanly falls back to refreshed codebase default
+            setDrafts((prev) => {
+                const next = { ...prev };
+                delete next[currentPrompt.action];
+                return next;
+            });
         }
     };
 

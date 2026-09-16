@@ -35,6 +35,13 @@ async function verifyAdmin(): Promise<AdminAuthResult> {
 
 
 
+function maskApiKey(key: string): string {
+    const clean = key.trim();
+    if (!clean) return "";
+    if (clean.length <= 8) return "••••••••";
+    return `${clean.slice(0, 4)}••••${clean.slice(-4)}`;
+}
+
 /**
  * Ephemeral live test for playground inputs without persisting to DB.
  */
@@ -80,7 +87,6 @@ export async function getAdminAiConfigsAction(): Promise<{
             name: string;
             provider: string;
             baseUrl: string;
-            apiKey: string;
             maskedApiKey: string;
             model: string;
             isDefault: boolean;
@@ -129,8 +135,7 @@ export async function getAdminAiConfigsAction(): Promise<{
                 name: String(doc.name || ""),
                 provider: String(doc.provider || ""),
                 baseUrl: String(doc.baseUrl || ""),
-                apiKey: String(doc.apiKey || ""),
-                maskedApiKey: String(doc.apiKey || ""),
+                maskedApiKey: maskApiKey(String(doc.apiKey || "")),
                 model: String(doc.model || ""),
                 isDefault: Boolean(doc.isDefault),
                 isActive: Boolean(doc.isActive),
@@ -185,11 +190,6 @@ export async function saveAdminAiConfigAction(
         await connectDB();
         const { id, ...configData } = parsed.data;
 
-        // If setting this one as default, clear default from any other existing configs
-        if (configData.isDefault) {
-            await AiConfigModel.updateMany({}, { $set: { isDefault: false } });
-        }
-
         // Check if there are existing configs; if 0 existing, force this one as default
         const existingCount = await AiConfigModel.countDocuments();
         const shouldBeDefault = configData.isDefault || existingCount === 0;
@@ -225,6 +225,14 @@ export async function saveAdminAiConfigAction(
             targetId = String(newConfig._id);
         }
 
+        // Only clear default on other configs after the target has been successfully saved
+        if (shouldBeDefault) {
+            await AiConfigModel.updateMany(
+                { _id: { $ne: targetId } },
+                { $set: { isDefault: false } }
+            );
+        }
+
         revalidatePath("/admin/ai");
         revalidatePath("/admin");
 
@@ -253,17 +261,21 @@ export async function setDefaultAdminAiConfigAction(
     try {
         await connectDB();
 
-        // Atomically unset all, then set the chosen one
-        await AiConfigModel.updateMany({}, { $set: { isDefault: false } });
-        const updated = await AiConfigModel.findByIdAndUpdate(
-            id,
-            { $set: { isDefault: true, isActive: true } },
-            { new: true }
-        );
-
-        if (!updated) {
+        // Verify target exists first before modifying any default flags
+        const target = await AiConfigModel.findById(id);
+        if (!target) {
             return { error: "Target configuration not found.", data: null };
         }
+
+        target.isDefault = true;
+        target.isActive = true;
+        await target.save();
+
+        // Safely clear default flag from all other configurations
+        await AiConfigModel.updateMany(
+            { _id: { $ne: id } },
+            { $set: { isDefault: false } }
+        );
 
         revalidatePath("/admin/ai");
         revalidatePath("/admin");
