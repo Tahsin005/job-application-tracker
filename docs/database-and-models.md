@@ -70,6 +70,34 @@ Represents an individual job application card.
   - `description`: string (optional).
   - `tags`: string array (optional).
   - `appliedDate`: Date (optional).
+  - `resumeId`: `ObjectId` (`ref: "Resume"`, optional).
+  - `attachedResumeName`: string (optional).
+  - `atsAnalysis`: Object containing `score`, `missingKeywords`, `matchedKeywords`, `actionVerbRecommendations`, `summary`, `analyzedAt`, `resumeName`.
+  - `aiCoverLetter`: string (optional).
+  - `aiOutreachMessage`: string (optional).
+  - `timestamps`: `createdAt`, `updatedAt`.
+
+#### `Resume` (`lib/models/resume.ts`)
+Stores multiple versioned resumes per user for ATS matching and version tracking.
+- **Fields**:
+  - `userId`: string (indexed).
+  - `name`: string (e.g. `"Resume_Frontend_v3.pdf"`).
+  - `textContent`: string (extracted plain text used for LLM context).
+  - `fileData`: string (base64 data URI for viewing/downloading).
+  - `fileSize`: number.
+  - `isDefault`: boolean.
+  - `timestamps`: `createdAt`, `updatedAt`.
+
+#### `UserUsage` (`lib/models/user-usage.ts`)
+Enforces per-user feature-wise quotas (default: 3 tries per feature) with atomic decrementing.
+- **Fields**:
+  - `userId`: string (unique index).
+  - `atsScanCount`: number (default: 0).
+  - `atsScanLimit`: number (default: 3).
+  - `coverLetterCount`: number (default: 0).
+  - `coverLetterLimit`: number (default: 3).
+  - `outreachCount`: number (default: 0).
+  - `outreachLimit`: number (default: 3).
   - `timestamps`: `createdAt`, `updatedAt`.
 
 ---

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Column, JobApplication } from "@/lib/models/models.types";
 import { Card, CardContent } from "./ui/card";
-import { Edit2, ExternalLink, MoreVertical, Trash2 } from "lucide-react";
+import { Edit2, ExternalLink, MoreVertical, Trash2, Sparkles, FileText } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -13,6 +13,7 @@ import {
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
 import {
     Dialog,
     DialogContent,
@@ -24,11 +25,14 @@ import {
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import { RichTextEditor } from "./ui/rich-text-editor";
+import { stripHtmlTags, truncateText } from "@/lib/utils";
 import { useBoardFacade } from "@/lib/facades/useBoardFacade";
 import {
     updateJobApplicationSchema,
     UpdateJobApplicationInput,
 } from "@/lib/validations/job-application";
+import { AtsAnalysisModal } from "./ai/ats-analysis-modal";
 
 interface JobApplicationCardProps {
     job: JobApplication;
@@ -44,10 +48,12 @@ export default function JobApplicationCard({
     isOverlay,
 }: JobApplicationCardProps) {
     const [isEditing, setIsEditing] = useState(false);
+    const [isAtsOpen, setIsAtsOpen] = useState(false);
     const { updateJob, deleteJob, moveJob } = useBoardFacade();
 
     const {
         register,
+        control,
         handleSubmit,
         reset,
         formState: { errors, isSubmitting },
@@ -116,12 +122,56 @@ export default function JobApplicationCard({
                     <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-sm mb-1">{job.position}</h3>
-                            <p className="text-xs text-muted-foreground mb-2">
+                            <p className="text-xs text-muted-foreground mb-1.5">
                                 {job.company}
                             </p>
+
+
+                            <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                                {job.atsAnalysis && (
+                                    <Badge
+                                        variant={
+                                            job.atsAnalysis.score >= 75
+                                                ? "success"
+                                                : job.atsAnalysis.score >= 50
+                                                    ? "warning"
+                                                    : "danger"
+                                        }
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsAtsOpen(true);
+                                        }}
+                                        className="cursor-pointer gap-1 text-[11px] py-0 px-1.5 hover:opacity-80 transition-opacity"
+                                        title="Click to view ATS Score and Recommendations"
+                                    >
+                                        <Sparkles className="size-3" />
+                                        ATS: {job.atsAnalysis.score}%
+                                    </Badge>
+                                )}
+                                {job.attachedResumeName && (
+                                    <Badge
+                                        variant="outline"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsAtsOpen(true);
+                                        }}
+                                        className="cursor-pointer gap-1 text-[10px] py-0 px-1.5 text-slate-600 bg-slate-50 hover:bg-slate-100"
+                                        title="Attached Resume Version"
+                                    >
+                                        <FileText className="size-3 text-indigo-500" />
+                                        <span className="truncate max-w-[120px]">
+                                            {job.attachedResumeName}
+                                        </span>
+                                    </Badge>
+                                )}
+                            </div>
+
                             {job.description && (
-                                <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                                    {job.description}
+                                <p
+                                    className="text-xs text-muted-foreground mb-2 truncate max-w-full"
+                                    title={stripHtmlTags(job.description)}
+                                >
+                                    {truncateText(job.description, 85)}
                                 </p>
                             )}
                             {job.tags && job.tags.length > 0 && (
@@ -151,6 +201,19 @@ export default function JobApplicationCard({
 
                         {!isOverlay && (
                             <div className="flex items-start gap-1">
+                                <Button
+                                    variant="ghost"
+                                    size="icon-xs"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsAtsOpen(true);
+                                    }}
+                                    className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 size-6"
+                                    title="AI Intelligence & ATS Match"
+                                >
+                                    <Sparkles className="size-3.5" />
+                                </Button>
+
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -158,6 +221,11 @@ export default function JobApplicationCard({
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => setIsAtsOpen(true)}>
+                                            <Sparkles className="mr-2 h-4 w-4 text-indigo-600" />
+                                            AI & ATS Match
+                                        </DropdownMenuItem>
+
                                         <DropdownMenuItem onClick={() => setIsEditing(true)}>
                                             <Edit2 className="mr-2 h-4 w-4" />
                                             Edit
@@ -194,109 +262,127 @@ export default function JobApplicationCard({
             </Card>
 
             {!isOverlay && (
-                <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                    <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Edit Job Application</DialogTitle>
-                            <DialogDescription>Update details for this job application</DialogDescription>
-                        </DialogHeader>
-                        <form className="space-y-4" onSubmit={handleSubmit(onUpdateSubmit)}>
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
+                <>
+                    <AtsAnalysisModal
+                        job={job}
+                        open={isAtsOpen}
+                        onOpenChange={setIsAtsOpen}
+                    />
+                    <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                        <DialogContent className="w-[92vw] sm:max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>Edit Job Application</DialogTitle>
+                                <DialogDescription>Update details for this job application</DialogDescription>
+                            </DialogHeader>
+                            <form className="space-y-4" onSubmit={handleSubmit(onUpdateSubmit)}>
+                                <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1 pr-2">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-company">Company *</Label>
+                                            <Input
+                                                id="edit-company"
+                                                {...register("company")}
+                                            />
+                                            {errors.company && (
+                                                <p className="text-xs text-destructive">{errors.company.message}</p>
+                                            )}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-position">Position *</Label>
+                                            <Input
+                                                id="edit-position"
+                                                {...register("position")}
+                                            />
+                                            {errors.position && (
+                                                <p className="text-xs text-destructive">{errors.position.message}</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-location">Location</Label>
+                                            <Input
+                                                id="edit-location"
+                                                {...register("location")}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-salary">Salary</Label>
+                                            <Input
+                                                id="edit-salary"
+                                                placeholder="e.g., $100k - $150k"
+                                                {...register("salary")}
+                                            />
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-2">
-                                        <Label htmlFor="edit-company">Company *</Label>
+                                        <Label htmlFor="edit-jobUrl">Job URL</Label>
                                         <Input
-                                            id="edit-company"
-                                            {...register("company")}
+                                            id="edit-jobUrl"
+                                            type="url"
+                                            placeholder="https://..."
+                                            {...register("jobUrl")}
                                         />
-                                        {errors.company && (
-                                            <p className="text-xs text-destructive">{errors.company.message}</p>
+                                        {errors.jobUrl && (
+                                            <p className="text-xs text-destructive">{errors.jobUrl.message}</p>
                                         )}
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="edit-position">Position *</Label>
+                                        <Label htmlFor="edit-tags">Tags (comma-separated)</Label>
                                         <Input
-                                            id="edit-position"
-                                            {...register("position")}
+                                            id="edit-tags"
+                                            placeholder="React, Tailwind, High Pay"
+                                            {...register("tags")}
                                         />
-                                        {errors.position && (
-                                            <p className="text-xs text-destructive">{errors.position.message}</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor="edit-description">Description</Label>
+                                            <span className="text-[11px] text-muted-foreground">Rich text / paste supported</span>
+                                        </div>
+                                        <Controller
+                                            name="description"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <RichTextEditor
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    placeholder="Paste the role details, responsibilities, or requirements..."
+                                                />
+                                            )}
+                                        />
+                                        {errors.description && (
+                                            <p className="text-xs text-destructive">{errors.description.message}</p>
                                         )}
                                     </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="edit-location">Location</Label>
-                                        <Input
-                                            id="edit-location"
-                                            {...register("location")}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="edit-salary">Salary</Label>
-                                        <Input
-                                            id="edit-salary"
-                                            placeholder="e.g., $100k - $150k"
-                                            {...register("salary")}
+                                        <Label htmlFor="edit-notes">Notes</Label>
+                                        <Textarea
+                                            id="edit-notes"
+                                            rows={4}
+                                            {...register("notes")}
                                         />
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="edit-jobUrl">Job URL</Label>
-                                    <Input
-                                        id="edit-jobUrl"
-                                        type="url"
-                                        placeholder="https://..."
-                                        {...register("jobUrl")}
-                                    />
-                                    {errors.jobUrl && (
-                                        <p className="text-xs text-destructive">{errors.jobUrl.message}</p>
-                                    )}
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="edit-tags">Tags (comma-separated)</Label>
-                                    <Input
-                                        id="edit-tags"
-                                        placeholder="React, Tailwind, High Pay"
-                                        {...register("tags")}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="edit-description">Description</Label>
-                                    <Textarea
-                                        id="edit-description"
-                                        rows={3}
-                                        placeholder="Brief description of the role..."
-                                        {...register("description")}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="edit-notes">Notes</Label>
-                                    <Textarea
-                                        id="edit-notes"
-                                        rows={4}
-                                        {...register("notes")}
-                                    />
-                                </div>
-                            </div>
-
-                            <DialogFooter>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setIsEditing(false)}
-                                >
-                                    Cancel
-                                </Button>
-                                <Button type="submit" disabled={isSubmitting}>
-                                    {isSubmitting ? "Saving..." : "Save Changes"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                                <DialogFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setIsEditing(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" disabled={isSubmitting}>
+                                        {isSubmitting ? "Saving..." : "Save Changes"}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </>
             )}
         </>
     );

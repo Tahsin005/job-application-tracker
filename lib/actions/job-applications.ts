@@ -257,14 +257,15 @@ export async function updateJobApplication(
     }
 
     const updated = await JobApplication.findByIdAndUpdate(id, updatesToApply, {
-        new: true,
+        returnDocument: "after",
     });
 
     revalidatePath("/dashboard");
 
     return {
-        data: JSON.parse(JSON.stringify(updated))
-    }
+        error: null,
+        data: JSON.parse(JSON.stringify(updated)),
+    };
 }
 
 export async function deleteJobApplication(id: string) {

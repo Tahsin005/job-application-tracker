@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Dialog,
@@ -17,6 +17,7 @@ import { Plus } from "lucide-react";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import { RichTextEditor } from "./ui/rich-text-editor";
 import { useBoardFacade } from "@/lib/facades/useBoardFacade";
 import {
     createJobApplicationSchema,
@@ -37,6 +38,7 @@ export default function CreateJobApplicationDialog({
 
     const {
         register,
+        control,
         handleSubmit,
         reset,
         formState: { errors, isSubmitting },
@@ -78,7 +80,7 @@ export default function CreateJobApplicationDialog({
                 </Button>
             </DialogTrigger>
 
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="w-[92vw] sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Add Job Application</DialogTitle>
                     <DialogDescription>Track a new job application</DialogDescription>
@@ -87,7 +89,7 @@ export default function CreateJobApplicationDialog({
                     <input type="hidden" {...register("columnId")} value={columnId} />
                     <input type="hidden" {...register("boardId")} value={boardId} />
 
-                    <div className="space-y-4">
+                    <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1 pr-2">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="create-company">Company *</Label>
@@ -156,13 +158,24 @@ export default function CreateJobApplicationDialog({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="create-description">Description</Label>
-                            <Textarea
-                                id="create-description"
-                                rows={3}
-                                placeholder="Brief description of the role..."
-                                {...register("description")}
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="create-description">Description</Label>
+                                <span className="text-[11px] text-muted-foreground">Rich text / paste supported</span>
+                            </div>
+                            <Controller
+                                name="description"
+                                control={control}
+                                render={({ field }) => (
+                                    <RichTextEditor
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        placeholder="Paste the role details, responsibilities, or requirements..."
+                                    />
+                                )}
                             />
+                            {errors.description && (
+                                <p className="text-xs text-destructive">{errors.description.message}</p>
+                            )}
                         </div>
 
                         <div className="space-y-2">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Board, Column, JobApplication } from "@/lib/models/models.types";
 import {
     Award,
@@ -9,6 +10,7 @@ import {
     MoreVertical,
     Trash2,
     XCircle,
+    FileText,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import {
@@ -23,6 +25,8 @@ import CreateJobApplicationDialog from "./create-job-dialog";
 import JobApplicationCard from "./job-application-card";
 import { useBoardFacade } from "@/lib/facades/useBoardFacade";
 import { Search } from "lucide-react";
+import { ResumeLibraryDialog } from "./resume/resume-library-dialog";
+import { CreditIndicator } from "./ai/credit-indicator";
 import {
     closestCorners,
     DndContext,
@@ -189,6 +193,7 @@ function SortableJobCard({
 }
 
 export default function KanbanBoard({ board }: KanbanBoardProps) {
+    const [isResumeLibraryOpen, setIsResumeLibraryOpen] = useState(false);
     const {
         columns,
         rawColumns,
@@ -320,17 +325,35 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
             onDragEnd={handleDragEnd}
         >
             <div className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div className="relative w-full max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Filter by company, role, or tag..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 h-9 bg-white"
+                            className="pl-9 h-9 bg-white shadow-xs"
                         />
                     </div>
+
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <CreditIndicator />
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsResumeLibraryOpen(true)}
+                            className="gap-1.5 bg-white text-slate-700 hover:text-indigo-600 shadow-xs border-slate-200"
+                        >
+                            <FileText className="size-4 text-indigo-500" />
+                            Manage Resumes
+                        </Button>
+                    </div>
                 </div>
+
+                <ResumeLibraryDialog
+                    open={isResumeLibraryOpen}
+                    onOpenChange={setIsResumeLibraryOpen}
+                />
 
                 <div className="flex gap-4 overflow-x-auto pb-4">
                     {sortedColumns.map((col, key) => {
