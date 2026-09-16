@@ -1,6 +1,5 @@
 "use client";
 
-import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -11,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { updateUserUsageSchema, UpdateUserUsageInput } from "@/lib/validations/admin";
-import { updateAdminUserUsageAction } from "@/lib/actions/admin";
+import { useAdminFacade } from "@/lib/facades/useAdminFacade";
 
 interface QuotaEditorCardProps {
     userId: string;
@@ -31,7 +30,7 @@ export default function QuotaEditorCard({
     userName,
     initialUsage,
 }: QuotaEditorCardProps) {
-    const [isPending, startTransition] = useTransition();
+    const { isUpdatingUsage, updateUserUsage } = useAdminFacade();
 
     const {
         register,
@@ -74,21 +73,8 @@ export default function QuotaEditorCard({
         toast.info(`Added +${amount} to all feature limits in form. Click 'Save Changes' to apply.`);
     };
 
-    const onSubmit = (data: UpdateUserUsageInput) => {
-        startTransition(async () => {
-            try {
-                const res = await updateAdminUserUsageAction(data);
-                if (res.error) {
-                    toast.error(res.error);
-                    return;
-                }
-                if (res.data) {
-                    toast.success("User AI quotas successfully updated!");
-                }
-            } catch (err: unknown) {
-                toast.error(err instanceof Error ? err.message : "Failed to update quota");
-            }
-        });
+    const onSubmit = async (data: UpdateUserUsageInput) => {
+        await updateUserUsage(data);
     };
 
     return (
@@ -115,7 +101,7 @@ export default function QuotaEditorCard({
                             variant="outline"
                             size="sm"
                             onClick={handleResetAllCounts}
-                            disabled={isPending}
+                            disabled={isUpdatingUsage}
                             className="text-xs gap-1 text-slate-700 hover:text-slate-900"
                         >
                             <RotateCcw className="h-3.5 w-3.5" />
@@ -126,7 +112,7 @@ export default function QuotaEditorCard({
                             variant="outline"
                             size="sm"
                             onClick={() => handleAddBonus(5)}
-                            disabled={isPending}
+                            disabled={isUpdatingUsage}
                             className="text-xs gap-1 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200"
                         >
                             <PlusCircle className="h-3.5 w-3.5" />
@@ -303,10 +289,10 @@ export default function QuotaEditorCard({
                     </span>
                     <Button
                         type="submit"
-                        disabled={isPending}
+                        disabled={isUpdatingUsage}
                         className="bg-primary hover:bg-primary/90 text-white gap-2 font-medium"
                     >
-                        {isPending ? (
+                        {isUpdatingUsage ? (
                             <>
                                 <RefreshCw className="h-4 w-4 animate-spin" />
                                 Saving Quotas...

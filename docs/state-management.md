@@ -131,3 +131,44 @@ export const aiKeys = {
    - `attachResume(jobId, resumeId)`: Links a specific resume version to a job application.
    - `extractPdfText(file)`: Server-side PDF extraction via `unpdf`.
 
+---
+
+## 5. The Admin Management Facade (`lib/facades/useAdminFacade.ts`)
+
+Encapsulates administrative operations for managing user telemetry and AI quota limits.
+
+### Key Responsibilities
+1. **User Usage & Quota Administration**:
+   - `updateUserUsage(input)`: Validates and updates user feature counts and limits (`atsScanCount`, `coverLetterCount`, `outreachCount`, and their respective limits) with Sonner toast feedback and Next.js router revalidation.
+2. **Loading States**: Exposes `isUpdatingUsage` for responsive button feedback and preventing duplicate submissions.
+
+---
+
+## 6. The Admin AI Provider Facade (`lib/facades/useAdminAiFacade.ts`)
+
+Encapsulates interaction with the dynamic AI Provider Factory, live probe testing playground, and database configuration management.
+
+### Key Responsibilities
+1. **Ephemeral Connection Testing**:
+   - `testConnection(input)`: Sends lightweight test probes to arbitrary provider endpoints (AgentRouter, OpenAI, Groq, Anthropic, Gemini, or custom) without persisting to MongoDB, returning latency measurements and status feedback.
+2. **Provider Persistence & Defaults**:
+   - `saveConfig(input)`: Persists tested configurations into MongoDB and synchronizes the active default provider.
+   - `setDefaultConfig(id, name)`: Atomically switches the default active provider.
+   - `deleteConfig(id, name)`: Deletes configurations and automatically re-promotes an alternative if the active provider was deleted.
+3. **Unified State & Telemetry**:
+   - Exposes `isTesting`, `testResult`, `isSaving`, `actionLoadingId`, and `clearTestResult()`.
+
+---
+
+## 7. The Admin AI Prompts Facade (`lib/facades/useAdminPromptsFacade.ts`)
+
+Encapsulates prompt management for the three core AI intelligence actions (`atsScan`, `coverLetter`, `outreach`).
+
+### Key Responsibilities
+1. **Prompt Customization**:
+   - `savePrompt(input)`: Validates and saves custom system instructions and user prompt templates to MongoDB with Next.js cache revalidation.
+2. **Codebase Sane Default Restoration**:
+   - `resetPrompt(action, name)`: Deletes the MongoDB override for an action, immediately reverting to the hardcoded codebase sane defaults.
+3. **Telemetry & Feedback**:
+   - Exposes `isSaving`, `isResetting`, and `activeActionId` for responsive inline button spinners and Sonner notifications.
+
