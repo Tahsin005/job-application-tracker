@@ -21,7 +21,7 @@ export default function Navbar() {
                     <Briefcase />
                     Job Tracker
                 </Link>
-                
+
                 <div className="flex items-center gap-4">
                     {isPending && !session ? (
                         <div className="flex items-center gap-3">
@@ -67,7 +67,7 @@ export default function Navbar() {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </>
-                    ): (
+                    ) : (
                         <>
                             <Link href="/sign-in">
                                 <Button

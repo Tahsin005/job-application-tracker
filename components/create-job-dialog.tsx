@@ -1,67 +1,69 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Plus } from "lucide-react";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
-import { createJobApplication } from "@/lib/actions/job-applications";
-import { toast } from "sonner";
+import { useBoardFacade } from "@/lib/facades/useBoardFacade";
+import {
+    createJobApplicationSchema,
+    CreateJobApplicationInput,
+} from "@/lib/validations/job-application";
 
 interface CreateJobApplicationDialogProps {
     columnId: string;
     boardId: string;
 }
 
-const INITIAL_FORM_DATA = {
-    company: "",
-    position: "",
-    location: "",
-    notes: "",
-    salary: "",
-    jobUrl: "",
-    tags: "",
-    description: "",
-};
-
 export default function CreateJobApplicationDialog({
     columnId,
     boardId,
 }: CreateJobApplicationDialogProps) {
     const [open, setOpen] = useState<boolean>(false);
-    const [formData, setFormData] = useState(INITIAL_FORM_DATA);
-    const [isPending, startTransition] = useTransition();
+    const { createJob } = useBoardFacade();
 
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<CreateJobApplicationInput>({
+        resolver: zodResolver(createJobApplicationSchema),
+        defaultValues: {
+            company: "",
+            position: "",
+            location: "",
+            salary: "",
+            jobUrl: "",
+            tags: "",
+            description: "",
+            notes: "",
+            columnId,
+            boardId,
+        },
+    });
 
-        startTransition(async () => {
-            try {
-            const result = await createJobApplication({
-                ...formData,
-                columnId,
-                boardId,
-                tags: formData.tags
-                    .split(",")
-                    .map((tag) => tag.trim())
-                    .filter((tag) => tag.length > 0),
-            });
-
-            if (!result.error) {
-                setFormData(INITIAL_FORM_DATA);
-                setOpen(false);
-                toast.success("Job application created!");
-            } else {
-                toast.error("Failed to create application", { description: result.error });
-                console.error("Failed to create job: ", result.error);
-            }
-        } catch (err) {
-            toast.error("An unexpected error occurred while saving.");
-            console.error(err);
+    async function onSubmit(data: CreateJobApplicationInput) {
+        try {
+            await createJob(data);
+            reset();
+            setOpen(false);
+        } catch {
+            // Error handling & toasts are encapsulated in the facade
         }
-        });
     }
 
     return (
@@ -81,102 +83,95 @@ export default function CreateJobApplicationDialog({
                     <DialogTitle>Add Job Application</DialogTitle>
                     <DialogDescription>Track a new job application</DialogDescription>
                 </DialogHeader>
-                <form className="space-y-4" onSubmit={handleSubmit}>
+                <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+                    <input type="hidden" {...register("columnId")} value={columnId} />
+                    <input type="hidden" {...register("boardId")} value={boardId} />
+
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="company">Company *</Label>
+                                <Label htmlFor="create-company">Company *</Label>
                                 <Input
-                                    id="company"
-                                    required
-                                    value={formData.company}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, company: e.target.value })
-                                    }
+                                    id="create-company"
+                                    placeholder="e.g., Stripe"
+                                    {...register("company")}
                                 />
+                                {errors.company && (
+                                    <p className="text-xs text-destructive">{errors.company.message}</p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="position">Position *</Label>
+                                <Label htmlFor="create-position">Position *</Label>
                                 <Input
-                                    id="position"
-                                    required
-                                    value={formData.position}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, position: e.target.value })
-                                    }
+                                    id="create-position"
+                                    placeholder="e.g., Frontend Engineer"
+                                    {...register("position")}
                                 />
+                                {errors.position && (
+                                    <p className="text-xs text-destructive">{errors.position.message}</p>
+                                )}
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="location">Location</Label>
+                                <Label htmlFor="create-location">Location</Label>
                                 <Input
-                                    id="location"
-                                    value={formData.location}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, location: e.target.value })
-                                    }
+                                    id="create-location"
+                                    placeholder="e.g., Remote / San Francisco"
+                                    {...register("location")}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="salary">Salary</Label>
+                                <Label htmlFor="create-salary">Salary</Label>
                                 <Input
-                                    id="salary"
+                                    id="create-salary"
                                     placeholder="e.g., $100k - $150k"
-                                    value={formData.salary}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, salary: e.target.value })
-                                    }
+                                    {...register("salary")}
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="jobUrl">Job URL</Label>
+                            <Label htmlFor="create-jobUrl">Job URL</Label>
                             <Input
-                                id="jobUrl"
+                                id="create-jobUrl"
                                 type="url"
                                 placeholder="https://..."
-                                value={formData.jobUrl}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, jobUrl: e.target.value })
-                                }
+                                {...register("jobUrl")}
                             />
+                            {errors.jobUrl && (
+                                <p className="text-xs text-destructive">{errors.jobUrl.message}</p>
+                            )}
                         </div>
+
                         <div className="space-y-2">
-                            <Label htmlFor="tags">Tags (comma-separated)</Label>
+                            <Label htmlFor="create-tags">Tags (comma-separated)</Label>
                             <Input
-                                id="tags"
-                                placeholder="React, Tailwind, High Pay"
-                                value={formData.tags}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, tags: e.target.value })
-                                }
+                                id="create-tags"
+                                placeholder="React, Tailwind, Remote"
+                                {...register("tags")}
                             />
                         </div>
+
                         <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
+                            <Label htmlFor="create-description">Description</Label>
                             <Textarea
-                                id="description"
+                                id="create-description"
                                 rows={3}
                                 placeholder="Brief description of the role..."
-                                value={formData.description}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, description: e.target.value })
-                                }
+                                {...register("description")}
                             />
                         </div>
+
                         <div className="space-y-2">
-                            <Label htmlFor="notes">Notes</Label>
+                            <Label htmlFor="create-notes">Notes</Label>
                             <Textarea
-                                id="notes"
+                                id="create-notes"
                                 rows={4}
-                                value={formData.notes}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, notes: e.target.value })
-                                }
+                                placeholder="Personal notes, referral info, interview tips..."
+                                {...register("notes")}
                             />
                         </div>
                     </div>
@@ -189,12 +184,12 @@ export default function CreateJobApplicationDialog({
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isPending}>
-                            {isPending ? "Adding..." : "Add Application"}
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? "Adding..." : "Add Application"}
                         </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
         </Dialog>
-    )
+    );
 }
