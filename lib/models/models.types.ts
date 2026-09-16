@@ -64,3 +64,15 @@ export interface UserUsageSummary {
     coverLetter: FeatureQuota;
     outreach: FeatureQuota;
 }
+
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    emailVerified?: boolean;
+    image?: string;
+    isAdmin?: boolean;
+    role?: string;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+}

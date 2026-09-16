@@ -14,4 +14,5 @@ export {
     consumeFeatureQuota,
     releaseFeatureQuota,
     checkFeatureQuota,
+    getOrCreateUserUsage,
 } from "./user-usage";
