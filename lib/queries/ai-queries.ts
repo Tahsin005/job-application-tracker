@@ -22,7 +22,38 @@ export const aiKeys = {
     all: ["ai"] as const,
     resumes: () => [...aiKeys.all, "resumes"] as const,
     usage: () => [...aiKeys.all, "usage"] as const,
+    jobStatus: (type: string, jobId: string) => [...aiKeys.all, "jobStatus", type, jobId] as const,
 };
+
+export function useAiJobStatusQuery(
+    type: "atsScan" | "coverLetter" | "outreach" | null,
+    jobId: string | null,
+    enabled = false
+) {
+    const queryClient = useQueryClient();
+
+    return useQuery({
+        queryKey: type && jobId ? aiKeys.jobStatus(type, jobId) : ["ai", "jobStatus", "none"],
+        queryFn: async () => {
+            if (!type || !jobId) return null;
+            const res = await fetch(`/api/ai/job-status?jobId=${jobId}&type=${type}`);
+            if (!res.ok) return null;
+            const json = await res.json();
+            return json.data || null;
+        },
+        enabled: Boolean(enabled && type && jobId),
+        refetchInterval: (query) => {
+            const data = query.state.data;
+            if (!data) return 1500;
+            if (data.status === "completed" || data.status === "failed") {
+                queryClient.invalidateQueries({ queryKey: boardKeys.all });
+                queryClient.invalidateQueries({ queryKey: aiKeys.usage() });
+                return false;
+            }
+            return 1500;
+        },
+    });
+}
 
 export function useUserResumesQuery() {
     return useQuery({

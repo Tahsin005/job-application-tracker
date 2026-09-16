@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
     useUserResumesQuery,
@@ -11,11 +12,14 @@ import {
     useSetDefaultResumeMutation,
     useDeleteResumeMutation,
     useAttachResumeMutation,
+    aiKeys,
 } from "../queries/ai-queries";
+import { boardKeys } from "../queries/board-queries";
 import { CreateResumeInput } from "../validations/resume";
 import { parsePdfResumeAction } from "../actions/resumes";
 
 export function useAiResumeFacade() {
+    const queryClient = useQueryClient();
     const { data: resumes = [], isLoading: isLoadingResumes } = useUserResumesQuery();
     const { data: usage, isLoading: isLoadingUsage } = useUserUsageQuery();
 
@@ -29,15 +33,55 @@ export function useAiResumeFacade() {
 
     const defaultResume = resumes.find((r) => r.isDefault) || resumes[0] || null;
 
+    async function pollJobCompletion(
+        type: "atsScan" | "coverLetter" | "outreach",
+        jobId: string,
+        toastId: string | number
+    ) {
+        const maxPolls = 40; // 40 * 1.5s = 60s
+        for (let i = 0; i < maxPolls; i++) {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            try {
+                const res = await fetch(`/api/ai/job-status?jobId=${jobId}&type=${type}`);
+                if (res.ok) {
+                    const json = await res.json();
+                    const status = json.data;
+                    if (status?.status === "completed") {
+                        await queryClient.invalidateQueries({ queryKey: boardKeys.all });
+                        await queryClient.invalidateQueries({ queryKey: aiKeys.usage() });
+                        return status.data;
+                    }
+                    if (status?.status === "failed") {
+                        throw new Error(status.error || "Background processing failed");
+                    }
+                    if (status?.step) {
+                        toast.loading(status.step, { id: toastId });
+                    }
+                }
+            } catch (err) {
+                if (i === maxPolls - 1) throw err;
+            }
+        }
+        throw new Error("Background processing timed out. Please refresh in a moment.");
+    }
+
     async function runAtsMatch(jobId: string, resumeId?: string) {
         const toastId = toast.loading("Analyzing ATS match...");
         try {
             const result = await atsMatchMutation.mutateAsync({ jobId, resumeId });
-            const score = result?.analysis?.score ?? 0;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let finalData = (result as any)?.result;
+
+            if (result?.status === "queued") {
+                toast.loading("Queued in background. Analyzing...", { id: toastId });
+                finalData = await pollJobCompletion("atsScan", jobId, toastId);
+            }
+
+            const score = finalData?.analysis?.score ?? 0;
             toast.success(`ATS Match complete! Score: ${score}% (${result?.remaining ?? 0} tries left)`, {
                 id: toastId,
             });
-            return result;
+            return finalData;
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Failed to run ATS match.";
             toast.error(message, { id: toastId });
@@ -49,10 +93,18 @@ export function useAiResumeFacade() {
         const toastId = toast.loading("Generating tailored cover letter...");
         try {
             const result = await coverLetterMutation.mutateAsync({ jobId, resumeId });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let finalData = (result as any)?.result;
+
+            if (result?.status === "queued") {
+                toast.loading("Queued in background. Generating cover letter...", { id: toastId });
+                finalData = await pollJobCompletion("coverLetter", jobId, toastId);
+            }
+
             toast.success(`Cover letter generated! (${result?.remaining ?? 0} tries left)`, {
                 id: toastId,
             });
-            return result?.coverLetter;
+            return finalData?.coverLetter;
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Failed to generate cover letter.";
             toast.error(message, { id: toastId });
@@ -64,10 +116,18 @@ export function useAiResumeFacade() {
         const toastId = toast.loading("Crafting recruiter outreach message...");
         try {
             const result = await outreachMutation.mutateAsync({ jobId, resumeId });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let finalData = (result as any)?.result;
+
+            if (result?.status === "queued") {
+                toast.loading("Queued in background. Generating outreach message...", { id: toastId });
+                finalData = await pollJobCompletion("outreach", jobId, toastId);
+            }
+
             toast.success(`Outreach message generated! (${result?.remaining ?? 0} tries left)`, {
                 id: toastId,
             });
-            return result?.outreachMessage;
+            return finalData?.outreachMessage;
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Failed to generate outreach message.";
             toast.error(message, { id: toastId });
