@@ -189,8 +189,8 @@ export async function getAdminUserDetailsAction(userId: string) {
         coverLetterLimit: usageDoc.coverLetterLimit,
         outreachCount: usageDoc.outreachCount,
         outreachLimit: usageDoc.outreachLimit,
-        applicationEmailCount: usageDoc.applicationEmailCount || 0,
-        applicationEmailLimit: usageDoc.applicationEmailLimit || 3,
+        applicationEmailCount: usageDoc.applicationEmailCount ?? 0,
+        applicationEmailLimit: usageDoc.applicationEmailLimit ?? 3,
         updatedAt: usageDoc.updatedAt,
     };
 

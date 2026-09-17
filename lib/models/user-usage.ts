@@ -82,10 +82,6 @@ const UserUsageSchema = new Schema<IUserUsage>(
     }
 );
 
-if (process.env.NODE_ENV === "development" && mongoose.models.UserUsage) {
-    delete mongoose.models.UserUsage;
-}
-
 export const UserUsage =
     mongoose.models.UserUsage || mongoose.model<IUserUsage>("UserUsage", UserUsageSchema);
 
@@ -147,27 +143,27 @@ export async function getUserQuotaSummary(userId: string): Promise<UserUsageSumm
     const usage = await getOrCreateUserUsage(userId);
     return {
         atsScan: {
-            used: usage.atsScanCount,
-            limit: usage.atsScanLimit,
-            remaining: Math.max(0, usage.atsScanLimit - usage.atsScanCount),
+            used: usage.atsScanCount ?? 0,
+            limit: usage.atsScanLimit ?? DEFAULT_LIMITS.atsScan,
+            remaining: Math.max(0, (usage.atsScanLimit ?? DEFAULT_LIMITS.atsScan) - (usage.atsScanCount ?? 0)),
         },
         coverLetter: {
-            used: usage.coverLetterCount,
-            limit: usage.coverLetterLimit,
-            remaining: Math.max(0, usage.coverLetterLimit - usage.coverLetterCount),
+            used: usage.coverLetterCount ?? 0,
+            limit: usage.coverLetterLimit ?? DEFAULT_LIMITS.coverLetter,
+            remaining: Math.max(0, (usage.coverLetterLimit ?? DEFAULT_LIMITS.coverLetter) - (usage.coverLetterCount ?? 0)),
         },
         outreach: {
-            used: usage.outreachCount,
-            limit: usage.outreachLimit,
-            remaining: Math.max(0, usage.outreachLimit - usage.outreachCount),
+            used: usage.outreachCount ?? 0,
+            limit: usage.outreachLimit ?? DEFAULT_LIMITS.outreach,
+            remaining: Math.max(0, (usage.outreachLimit ?? DEFAULT_LIMITS.outreach) - (usage.outreachCount ?? 0)),
         },
         applicationEmail: {
-            used: usage.applicationEmailCount || 0,
-            limit: usage.applicationEmailLimit || DEFAULT_LIMITS.applicationEmail,
+            used: usage.applicationEmailCount ?? 0,
+            limit: usage.applicationEmailLimit ?? DEFAULT_LIMITS.applicationEmail,
             remaining: Math.max(
                 0,
-                (usage.applicationEmailLimit || DEFAULT_LIMITS.applicationEmail) -
-                    (usage.applicationEmailCount || 0)
+                (usage.applicationEmailLimit ?? DEFAULT_LIMITS.applicationEmail) -
+                    (usage.applicationEmailCount ?? 0)
             ),
         },
     };
@@ -187,8 +183,9 @@ export async function checkFeatureQuota(
     const countField = `${feature}Count` as keyof IUserUsage;
     const limitField = `${feature}Limit` as keyof IUserUsage;
 
-    const currentUsed = (usage[countField] as number) || 0;
-    const currentLimit = (usage[limitField] as number) || DEFAULT_LIMITS[feature];
+    const currentUsed = (usage[countField] as number) ?? 0;
+    const storedLimit = usage[limitField] as number | null | undefined;
+    const currentLimit = storedLimit ?? DEFAULT_LIMITS[feature];
 
     if (currentUsed >= currentLimit) {
         const featureNames: Record<FeatureType, string> = {
@@ -227,8 +224,9 @@ export async function consumeFeatureQuota(
     const countField = `${feature}Count` as keyof IUserUsage;
     const limitField = `${feature}Limit` as keyof IUserUsage;
 
-    const currentUsed = (usage[countField] as number) || 0;
-    const currentLimit = (usage[limitField] as number) || DEFAULT_LIMITS[feature];
+    const currentUsed = (usage[countField] as number) ?? 0;
+    const storedLimit = usage[limitField] as number | null | undefined;
+    const currentLimit = storedLimit ?? DEFAULT_LIMITS[feature];
 
     if (currentUsed >= currentLimit) {
         const featureNames: Record<FeatureType, string> = {
@@ -257,7 +255,7 @@ export async function consumeFeatureQuota(
         },
         {
             $inc: { [countField]: 1 },
-            $set: { [limitField]: currentLimit },
+            ...(storedLimit == null ? { $set: { [limitField]: currentLimit } } : {}),
         },
         { returnDocument: "after" }
     );
@@ -272,7 +270,7 @@ export async function consumeFeatureQuota(
         };
     }
 
-    const newUsed = (updated[countField] as number) || currentUsed + 1;
+    const newUsed = (updated[countField] as number) ?? currentUsed + 1;
     const remaining = Math.max(0, currentLimit - newUsed);
 
     return {
