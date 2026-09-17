@@ -3,10 +3,12 @@ import { Board, Column, JobApplication } from "@/lib/models/models.types";
 function escapeCsvValue(val: unknown): string {
     if (val === null || val === undefined) return "";
     const str = String(val);
-    if (str.includes(",") || str.includes('"') || str.includes("\n") || str.includes("\r")) {
-        return `"${str.replace(/"/g, '""')}"`;
+    // Neutralize spreadsheet formulas in exported CSV cells (CSV injection defense)
+    const safeStr = /^\s*[=+\-@]/.test(str) ? `'${str}` : str;
+    if (safeStr.includes(",") || safeStr.includes('"') || safeStr.includes("\n") || safeStr.includes("\r")) {
+        return `"${safeStr.replace(/"/g, '""')}"`;
     }
-    return str;
+    return safeStr;
 }
 
 function formatDate(val: string | Date | undefined): string {

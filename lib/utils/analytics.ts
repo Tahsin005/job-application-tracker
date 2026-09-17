@@ -95,7 +95,10 @@ export function computeBoardAnalytics(columns: Column[] | undefined | null): Fun
         const lowerName = col.name.trim().toLowerCase();
         let stageType = "other";
 
-        if (lowerName.includes("wish") || lowerName.includes("saved") || lowerName.includes("plan")) {
+        if (lowerName.includes("reject") || lowerName.includes("declined") || lowerName.includes("archive")) {
+            rejectedJobs = [...rejectedJobs, ...jobs];
+            stageType = "rejected";
+        } else if (lowerName.includes("wish") || lowerName.includes("saved") || lowerName.includes("plan")) {
             wishlistJobs = [...wishlistJobs, ...jobs];
             stageType = "wishlist";
         } else if (lowerName.includes("interview") || lowerName.includes("screen") || lowerName.includes("round")) {
@@ -104,9 +107,6 @@ export function computeBoardAnalytics(columns: Column[] | undefined | null): Fun
         } else if (lowerName.includes("offer") || lowerName.includes("accepted")) {
             offerJobs = [...offerJobs, ...jobs];
             stageType = "offer";
-        } else if (lowerName.includes("reject") || lowerName.includes("declined") || lowerName.includes("archive")) {
-            rejectedJobs = [...rejectedJobs, ...jobs];
-            stageType = "rejected";
         } else if (lowerName.includes("applied") || lowerName.includes("submitted") || lowerName.includes("send")) {
             appliedJobs = [...appliedJobs, ...jobs];
             stageType = "applied";
@@ -312,6 +312,7 @@ export function computeBoardAnalytics(columns: Column[] | undefined | null): Fun
     const insights = generateInsights({
         appliedCount,
         interviewCount,
+        activeInterviewCount: interviewJobs.length,
         offerCount,
         rejectedCount,
         interviewConversionRate,
@@ -349,6 +350,7 @@ export function computeBoardAnalytics(columns: Column[] | undefined | null): Fun
 function generateInsights(params: {
     appliedCount: number;
     interviewCount: number;
+    activeInterviewCount: number;
     offerCount: number;
     rejectedCount: number;
     interviewConversionRate: number;
@@ -381,12 +383,19 @@ function generateInsights(params: {
         });
     }
 
-    if (params.interviewCount > 0) {
+    if (params.activeInterviewCount > 0) {
         list.push({
             id: "active-interviews",
             type: "success",
             title: "Active Interview Pipeline",
-            description: `You have ${params.interviewCount} role${params.interviewCount > 1 ? "s" : ""} in the interview stage. Deep-dive into company technical stacks, prep STAR-method behavioral stories, and send thank-you notes within 24 hours.`,
+            description: `You have ${params.activeInterviewCount} active role${params.activeInterviewCount > 1 ? "s" : ""} currently in the interview stage. Deep-dive into company technical stacks, prep STAR-method behavioral stories, and send thank-you notes within 24 hours.`,
+        });
+    } else if (params.interviewCount > 0 && params.offerCount > 0) {
+        list.push({
+            id: "interviews-converted",
+            type: "success",
+            title: "Interviews Converted to Offers",
+            description: `All ${params.interviewCount} role${params.interviewCount > 1 ? "s" : ""} that entered your interview stage have successfully converted to offers. Outstanding interview performance!`,
         });
     }
 

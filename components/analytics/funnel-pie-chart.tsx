@@ -300,9 +300,20 @@ export default function FunnelPieChart({ stages, overallWinRate }: FunnelPieChar
                         return (
                             <div
                                 key={slice.stage.id}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`${slice.stage.name}: ${slice.value} applications, ${pct}%`}
                                 onMouseEnter={() => setHoveredIndex(slice.index)}
                                 onMouseLeave={() => setHoveredIndex(null)}
-                                className={`cursor-pointer rounded-lg p-3 border transition-all duration-200 flex items-center justify-between ${isHovered
+                                onFocus={() => setHoveredIndex(slice.index)}
+                                onBlur={() => setHoveredIndex(null)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        setHoveredIndex(hoveredIndex === slice.index ? null : slice.index);
+                                    }
+                                }}
+                                className={`cursor-pointer rounded-lg p-3 border transition-all duration-200 flex items-center justify-between focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 ${isHovered
                                         ? "bg-white border-indigo-300 shadow-xs ring-1 ring-indigo-200"
                                         : "bg-white/80 border-slate-200 hover:bg-white hover:border-slate-300"
                                     }`}

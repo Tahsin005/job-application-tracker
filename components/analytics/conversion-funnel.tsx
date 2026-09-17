@@ -156,8 +156,18 @@ export default function ConversionFunnel({ analytics }: ConversionFunnelProps) {
                             {stages.map((stage) => (
                                 <Card
                                     key={stage.id}
-                                    className="border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all cursor-pointer"
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={expandedStageId === stage.id}
+                                    aria-label={`Toggle ${stage.name} applications drilldown`}
+                                    className="border-slate-200 bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all cursor-pointer focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
                                     onClick={() => toggleExpand(stage.id)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            toggleExpand(stage.id);
+                                        }
+                                    }}
                                 >
                                     <CardContent className="p-4 flex flex-col justify-between h-full">
                                         <div className="flex items-center justify-between mb-2">
@@ -215,8 +225,18 @@ function StageCard({
 
     return (
         <div
+            role="button"
+            tabIndex={0}
+            aria-expanded={isExpanded}
+            aria-label={`Toggle ${stage.name} stage drilldown`}
             onClick={onToggle}
-            className={`cursor-pointer rounded-xl border p-4 transition-all duration-200 select-none ${isExpanded
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onToggle();
+                }
+            }}
+            className={`cursor-pointer rounded-xl border p-4 transition-all duration-200 select-none focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 ${isExpanded
                 ? "border-indigo-500 bg-indigo-50/40 shadow-xs ring-2 ring-indigo-500/20"
                 : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs"
                 }`}
@@ -347,7 +367,7 @@ function StageJobDrilldown({
                             <div className="mt-2 flex items-center justify-between text-[10px] text-slate-400">
                                 <span className="flex items-center gap-1">
                                     <MapPin className="size-2.5" />
-                                    {job.location || "Remote"}
+                                    {job.location || "Location not specified"}
                                 </span>
                                 {job.salary && (
                                     <span className="font-medium text-emerald-600">
