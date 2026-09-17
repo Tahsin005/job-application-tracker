@@ -103,6 +103,8 @@ export async function getAdminUsersAction({
                     coverLetterLimit: usageDoc?.coverLetterLimit ?? 3,
                     outreachUsed: usageDoc?.outreachCount ?? 0,
                     outreachLimit: usageDoc?.outreachLimit ?? 3,
+                    applicationEmailUsed: usageDoc?.applicationEmailCount ?? 0,
+                    applicationEmailLimit: usageDoc?.applicationEmailLimit ?? 3,
                 },
             };
         })
@@ -187,6 +189,8 @@ export async function getAdminUserDetailsAction(userId: string) {
         coverLetterLimit: usageDoc.coverLetterLimit,
         outreachCount: usageDoc.outreachCount,
         outreachLimit: usageDoc.outreachLimit,
+        applicationEmailCount: usageDoc.applicationEmailCount || 0,
+        applicationEmailLimit: usageDoc.applicationEmailLimit || 3,
         updatedAt: usageDoc.updatedAt,
     };
 
@@ -249,6 +253,8 @@ export async function updateAdminUserUsageAction(rawInput: UpdateUserUsageInput)
         coverLetterLimit,
         outreachCount,
         outreachLimit,
+        applicationEmailCount,
+        applicationEmailLimit,
     } = parsed.data;
 
     let userQuery: Record<string, unknown> = { _id: userId };
@@ -275,6 +281,8 @@ export async function updateAdminUserUsageAction(rawInput: UpdateUserUsageInput)
                 coverLetterLimit,
                 outreachCount,
                 outreachLimit,
+                applicationEmailCount,
+                applicationEmailLimit,
             },
         },
         { upsert: true, returnDocument: "after" }
@@ -299,6 +307,8 @@ export async function updateAdminUserUsageAction(rawInput: UpdateUserUsageInput)
             coverLetterLimit: updated.coverLetterLimit,
             outreachCount: updated.outreachCount,
             outreachLimit: updated.outreachLimit,
+            applicationEmailCount: updated.applicationEmailCount,
+            applicationEmailLimit: updated.applicationEmailLimit,
             updatedAt: updated.updatedAt,
         },
     };

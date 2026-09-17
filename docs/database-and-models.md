@@ -75,6 +75,7 @@ Represents an individual job application card.
   - `atsAnalysis`: Object containing `score`, `missingKeywords`, `matchedKeywords`, `actionVerbRecommendations`, `summary`, `analyzedAt`, `resumeName`.
   - `aiCoverLetter`: string (optional).
   - `aiOutreachMessage`: string (optional).
+  - `aiApplicationEmail`: string (optional).
   - `timestamps`: `createdAt`, `updatedAt`.
 
 #### `Resume` (`lib/models/resume.ts`)

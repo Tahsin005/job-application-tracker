@@ -147,3 +147,31 @@ export async function generateColdOutreachMessage({
         { role: "user", content: userPrompt },
     ]);
 }
+
+export async function generateApplicationEmail({
+    resumeText,
+    jobTitle,
+    company,
+    jobDescription,
+}: {
+    resumeText: string;
+    jobTitle: string;
+    company: string;
+    jobDescription: string;
+}): Promise<string> {
+    const promptDef = await getEffectivePrompt("applicationEmail");
+    const templateVars: Record<string, string> = {
+        company: company || "Target Company",
+        jobTitle: jobTitle || "Target Position",
+        jobDescription: jobDescription || "",
+        resumeText: resumeText || "",
+    };
+
+    const systemPrompt = interpolatePrompt(promptDef.systemPrompt, templateVars);
+    const userPrompt = interpolatePrompt(promptDef.userPromptTemplate, templateVars);
+
+    return await callAiChat([
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+    ]);
+}

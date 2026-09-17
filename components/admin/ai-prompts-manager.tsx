@@ -11,6 +11,7 @@ import {
     Check,
     FileText,
     Mail,
+    Send,
     ScanText,
     Database,
     Code,
@@ -127,7 +128,9 @@ export default function AiPromptsManager({
             case "coverLetter":
                 return <FileText className="h-4 w-4 text-purple-600" />;
             case "outreach":
-                return <Mail className="h-4 w-4 text-blue-600" />;
+                return <Send className="h-4 w-4 text-blue-600" />;
+            case "applicationEmail":
+                return <Mail className="h-4 w-4 text-sky-600" />;
             default:
                 return <Sparkles className="h-4 w-4 text-slate-500" />;
         }

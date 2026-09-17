@@ -6,6 +6,7 @@ import {
     analyzeAtsMatch,
     generateCoverLetter,
     generateColdOutreachMessage,
+    generateApplicationEmail,
 } from "./agentrouter";
 import { setAiJobStatus } from "../upstash/redis";
 import { AiTaskPayload } from "../upstash/qstash";
@@ -152,6 +153,31 @@ export async function processAiTask(payload: AiTaskPayload): Promise<{
             resultData = {
                 outreachMessage,
             };
+        } else if (type === "applicationEmail") {
+            const cleanDesc = stripHtmlTags(job.description || "").trim();
+            if (!cleanDesc) {
+                throw new Error(
+                    "A job description is required to generate an application email. Please add a description to this job application first."
+                );
+            }
+
+            const applicationEmail = await generateApplicationEmail({
+                resumeText: resume.textContent,
+                jobTitle: job.position,
+                company: job.company,
+                jobDescription: cleanDesc,
+            });
+
+            job.aiApplicationEmail = applicationEmail;
+            job.markModified("aiApplicationEmail");
+            await job.save();
+            await JobApplication.findByIdAndUpdate(jobId, {
+                $set: { aiApplicationEmail: applicationEmail },
+            });
+
+            resultData = {
+                applicationEmail,
+            };
         }
 
         await setAiJobStatus(type, jobId, {
@@ -170,7 +196,15 @@ export async function processAiTask(payload: AiTaskPayload): Promise<{
 
         const error = formatAiErrorMessage(
             err,
-            `Failed to process ${type === "atsScan" ? "ATS analysis" : type === "coverLetter" ? "cover letter" : "outreach message"}.`
+            `Failed to process ${
+                type === "atsScan"
+                    ? "ATS analysis"
+                    : type === "coverLetter"
+                        ? "cover letter"
+                        : type === "outreach"
+                            ? "outreach message"
+                            : "application email"
+            }.`
         );
 
         await setAiJobStatus(type, jobId, {

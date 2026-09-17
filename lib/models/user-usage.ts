@@ -8,11 +8,13 @@ export interface IUserUsage extends Document {
     coverLetterLimit: number;
     outreachCount: number;
     outreachLimit: number;
+    applicationEmailCount: number;
+    applicationEmailLimit: number;
     createdAt: Date;
     updatedAt: Date;
 }
 
-export type FeatureType = "atsScan" | "coverLetter" | "outreach";
+export type FeatureType = "atsScan" | "coverLetter" | "outreach" | "applicationEmail";
 
 export interface FeatureQuota {
     used: number;
@@ -24,12 +26,14 @@ export interface UserUsageSummary {
     atsScan: FeatureQuota;
     coverLetter: FeatureQuota;
     outreach: FeatureQuota;
+    applicationEmail: FeatureQuota;
 }
 
 const DEFAULT_LIMITS = {
     atsScan: 3,
     coverLetter: 3,
     outreach: 3,
+    applicationEmail: 3,
 };
 
 const UserUsageSchema = new Schema<IUserUsage>(
@@ -64,31 +68,67 @@ const UserUsageSchema = new Schema<IUserUsage>(
             type: Number,
             default: DEFAULT_LIMITS.outreach,
         },
+        applicationEmailCount: {
+            type: Number,
+            default: 0,
+        },
+        applicationEmailLimit: {
+            type: Number,
+            default: DEFAULT_LIMITS.applicationEmail,
+        },
     },
     {
         timestamps: true,
     }
 );
 
+if (process.env.NODE_ENV === "development" && mongoose.models.UserUsage) {
+    delete mongoose.models.UserUsage;
+}
+
 export const UserUsage =
     mongoose.models.UserUsage || mongoose.model<IUserUsage>("UserUsage", UserUsageSchema);
 
 export async function getOrCreateUserUsage(userId: string): Promise<IUserUsage> {
-    const usage = await UserUsage.findOneAndUpdate(
-        { userId },
-        {
-            $setOnInsert: {
-                userId,
-                atsScanCount: 0,
-                atsScanLimit: DEFAULT_LIMITS.atsScan,
-                coverLetterCount: 0,
-                coverLetterLimit: DEFAULT_LIMITS.coverLetter,
-                outreachCount: 0,
-                outreachLimit: DEFAULT_LIMITS.outreach,
-            },
-        },
-        { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
-    );
+    let usage = await UserUsage.findOne({ userId });
+
+    if (!usage) {
+        usage = await UserUsage.create({
+            userId,
+            atsScanCount: 0,
+            atsScanLimit: DEFAULT_LIMITS.atsScan,
+            coverLetterCount: 0,
+            coverLetterLimit: DEFAULT_LIMITS.coverLetter,
+            outreachCount: 0,
+            outreachLimit: DEFAULT_LIMITS.outreach,
+            applicationEmailCount: 0,
+            applicationEmailLimit: DEFAULT_LIMITS.applicationEmail,
+        });
+        return usage;
+    }
+
+    // Auto-backfill any newly introduced feature quotas on existing user documents
+    const updates: Record<string, unknown> = {};
+    if (usage.atsScanCount == null) updates.atsScanCount = 0;
+    if (usage.atsScanLimit == null) updates.atsScanLimit = DEFAULT_LIMITS.atsScan;
+    if (usage.coverLetterCount == null) updates.coverLetterCount = 0;
+    if (usage.coverLetterLimit == null) updates.coverLetterLimit = DEFAULT_LIMITS.coverLetter;
+    if (usage.outreachCount == null) updates.outreachCount = 0;
+    if (usage.outreachLimit == null) updates.outreachLimit = DEFAULT_LIMITS.outreach;
+    if (usage.applicationEmailCount == null) updates.applicationEmailCount = 0;
+    if (usage.applicationEmailLimit == null) updates.applicationEmailLimit = DEFAULT_LIMITS.applicationEmail;
+
+    if (Object.keys(updates).length > 0) {
+        const updated = await UserUsage.findOneAndUpdate(
+            { userId },
+            { $set: updates },
+            { returnDocument: "after" }
+        );
+        if (updated) {
+            return updated as IUserUsage;
+        }
+    }
+
     return usage as IUserUsage;
 }
 
@@ -121,6 +161,15 @@ export async function getUserQuotaSummary(userId: string): Promise<UserUsageSumm
             limit: usage.outreachLimit,
             remaining: Math.max(0, usage.outreachLimit - usage.outreachCount),
         },
+        applicationEmail: {
+            used: usage.applicationEmailCount || 0,
+            limit: usage.applicationEmailLimit || DEFAULT_LIMITS.applicationEmail,
+            remaining: Math.max(
+                0,
+                (usage.applicationEmailLimit || DEFAULT_LIMITS.applicationEmail) -
+                    (usage.applicationEmailCount || 0)
+            ),
+        },
     };
 }
 
@@ -146,6 +195,7 @@ export async function checkFeatureQuota(
             atsScan: "ATS Resume Matcher",
             coverLetter: "AI Cover Letter Generator",
             outreach: "Cold Outreach Generator",
+            applicationEmail: "Job Application Email Generator",
         };
         return {
             allowed: false,
@@ -185,6 +235,7 @@ export async function consumeFeatureQuota(
             atsScan: "ATS Resume Matcher",
             coverLetter: "AI Cover Letter Generator",
             outreach: "Cold Outreach Generator",
+            applicationEmail: "Job Application Email Generator",
         };
         return {
             allowed: false,
@@ -196,8 +247,18 @@ export async function consumeFeatureQuota(
     }
 
     const updated = await UserUsage.findOneAndUpdate(
-        { userId, [countField]: { $lt: currentLimit } },
-        { $inc: { [countField]: 1 } },
+        {
+            userId,
+            $or: [
+                { [countField]: { $exists: false } },
+                { [countField]: null },
+                { [countField]: { $lt: currentLimit } },
+            ],
+        },
+        {
+            $inc: { [countField]: 1 },
+            $set: { [limitField]: currentLimit },
+        },
         { returnDocument: "after" }
     );
 

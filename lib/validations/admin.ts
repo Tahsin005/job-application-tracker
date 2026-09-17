@@ -8,6 +8,8 @@ export const updateUserUsageSchema = z.object({
     coverLetterLimit: z.coerce.number().int().min(0, "Limit cannot be negative"),
     outreachCount: z.coerce.number().int().min(0, "Count cannot be negative"),
     outreachLimit: z.coerce.number().int().min(0, "Limit cannot be negative"),
+    applicationEmailCount: z.coerce.number().int().min(0, "Count cannot be negative").default(0),
+    applicationEmailLimit: z.coerce.number().int().min(0, "Limit cannot be negative").default(3),
 });
 
 export type UpdateUserUsageInput = z.infer<typeof updateUserUsageSchema>;

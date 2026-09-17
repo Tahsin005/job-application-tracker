@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { JobApplication } from "@/lib/models/models.types";
+import { AtsAnalysis, JobApplication } from "@/lib/models/models.types";
 import {
     Dialog,
     DialogContent,
@@ -21,6 +21,7 @@ import {
     Copy,
     Check,
     Send,
+    Mail,
     Loader2,
     Briefcase,
     TrendingUp,
@@ -35,9 +36,26 @@ interface AtsAnalysisModalProps {
 }
 
 export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalProps) {
-    const [activeTab, setActiveTab] = useState<"ats" | "cover-letter" | "outreach" | "resume">("ats");
+    const [activeTab, setActiveTab] = useState<
+        "ats" | "cover-letter" | "outreach" | "application-email" | "resume"
+    >("ats");
     const [copiedCoverLetter, setCopiedCoverLetter] = useState(false);
     const [copiedOutreach, setCopiedOutreach] = useState(false);
+    const [copiedEmail, setCopiedEmail] = useState(false);
+
+    const [localApplicationEmail, setLocalApplicationEmail] = useState<string | null>(null);
+    const [localCoverLetter, setLocalCoverLetter] = useState<string | null>(null);
+    const [localOutreach, setLocalOutreach] = useState<string | null>(null);
+    const [localAtsAnalysis, setLocalAtsAnalysis] = useState<AtsAnalysis | null>(null);
+    const [prevJobId, setPrevJobId] = useState(job._id);
+
+    if (job._id !== prevJobId) {
+        setPrevJobId(job._id);
+        setLocalApplicationEmail(null);
+        setLocalCoverLetter(null);
+        setLocalOutreach(null);
+        setLocalAtsAnalysis(null);
+    }
 
     const {
         resumes,
@@ -46,9 +64,11 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
         isAnalyzingAts,
         isGeneratingCoverLetter,
         isGeneratingOutreach,
+        isGeneratingApplicationEmail,
         runAtsMatch,
         generateCoverLetter,
         generateOutreach,
+        generateApplicationEmail,
         attachResume,
     } = useAiResumeFacade();
 
@@ -63,18 +83,34 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
         resumes[0]?._id ||
         "";
 
-    const ats = job.atsAnalysis;
+    const ats = localAtsAnalysis || job.atsAnalysis;
     const atsScore = ats?.score ?? 0;
+    const currentCoverLetter = localCoverLetter || job.aiCoverLetter;
+    const currentOutreach = localOutreach || job.aiOutreachMessage;
+    const currentEmail = localApplicationEmail || job.aiApplicationEmail;
 
     // Remaining tries
     const atsRemaining = usage?.atsScan?.remaining ?? 3;
     const coverLetterRemaining = usage?.coverLetter?.remaining ?? 3;
     const outreachRemaining = usage?.outreach?.remaining ?? 3;
+    const applicationEmailRemaining = usage?.applicationEmail?.remaining ?? 3;
+
+    // Prerequisites validation for Application Email
+    const hasDescription = Boolean(job.description && stripHtmlTags(job.description).trim().length > 0);
+    const hasResume = Boolean(selectedResumeId && resumes.length > 0);
+    const canGenerateApplicationEmail =
+        hasDescription &&
+        hasResume &&
+        applicationEmailRemaining > 0 &&
+        !isGeneratingApplicationEmail;
 
     async function handleRunAts() {
         if (!selectedResumeId) return;
         try {
-            await runAtsMatch(job._id, selectedResumeId);
+            const res = await runAtsMatch(job._id, selectedResumeId);
+            if (res?.analysis) {
+                setLocalAtsAnalysis(res.analysis);
+            }
         } catch {
             // Error toast handled in facade
         }
@@ -83,7 +119,10 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
     async function handleGenerateCoverLetter() {
         if (!selectedResumeId) return;
         try {
-            await generateCoverLetter(job._id, selectedResumeId);
+            const letter = await generateCoverLetter(job._id, selectedResumeId);
+            if (letter) {
+                setLocalCoverLetter(letter);
+            }
         } catch {
             // Error toast handled in facade
         }
@@ -92,7 +131,22 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
     async function handleGenerateOutreach() {
         if (!selectedResumeId) return;
         try {
-            await generateOutreach(job._id, selectedResumeId);
+            const message = await generateOutreach(job._id, selectedResumeId);
+            if (message) {
+                setLocalOutreach(message);
+            }
+        } catch {
+            // Error toast handled in facade
+        }
+    }
+
+    async function handleGenerateApplicationEmail() {
+        if (!canGenerateApplicationEmail || !selectedResumeId) return;
+        try {
+            const email = await generateApplicationEmail(job._id, selectedResumeId);
+            if (email) {
+                setLocalApplicationEmail(email);
+            }
         } catch {
             // Error toast handled in facade
         }
@@ -107,14 +161,17 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
         }
     }
 
-    function copyToClipboard(text: string, type: "cover" | "outreach") {
+    function copyToClipboard(text: string, type: "cover" | "outreach" | "email") {
         navigator.clipboard.writeText(text);
         if (type === "cover") {
             setCopiedCoverLetter(true);
             setTimeout(() => setCopiedCoverLetter(false), 2000);
-        } else {
+        } else if (type === "outreach") {
             setCopiedOutreach(true);
             setTimeout(() => setCopiedOutreach(false), 2000);
+        } else {
+            setCopiedEmail(true);
+            setTimeout(() => setCopiedEmail(false), 2000);
         }
     }
 
@@ -155,27 +212,25 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 bg-slate-200/70 p-1.5 rounded-xl text-xs sm:text-sm font-medium">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-4 bg-slate-200/70 p-1.5 rounded-xl text-xs sm:text-sm font-medium">
                         <button
                             type="button"
                             onClick={() => setActiveTab("ats")}
-                            className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
-                                activeTab === "ats"
+                            className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap ${activeTab === "ats"
                                     ? "bg-white text-slate-900 shadow-sm font-semibold"
                                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-                            }`}
+                                }`}
                         >
                             <TrendingUp className="size-4 text-indigo-600 shrink-0" />
                             <span>ATS Match</span>
                             {ats && (
                                 <span
-                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                                        atsScore >= 75
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${atsScore >= 75
                                             ? "bg-emerald-100 text-emerald-700"
                                             : atsScore >= 50
                                                 ? "bg-amber-100 text-amber-700"
                                                 : "bg-rose-100 text-rose-700"
-                                    }`}
+                                        }`}
                                 >
                                     {atsScore}%
                                 </span>
@@ -184,11 +239,10 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                         <button
                             type="button"
                             onClick={() => setActiveTab("cover-letter")}
-                            className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
-                                activeTab === "cover-letter"
+                            className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap ${activeTab === "cover-letter"
                                     ? "bg-white text-slate-900 shadow-sm font-semibold"
                                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-                            }`}
+                                }`}
                         >
                             <Sparkles className="size-4 text-indigo-600 shrink-0" />
                             <span>Cover Letter</span>
@@ -196,23 +250,32 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                         <button
                             type="button"
                             onClick={() => setActiveTab("outreach")}
-                            className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
-                                activeTab === "outreach"
+                            className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap ${activeTab === "outreach"
                                     ? "bg-white text-slate-900 shadow-sm font-semibold"
                                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-                            }`}
+                                }`}
                         >
                             <Send className="size-4 text-indigo-600 shrink-0" />
                             <span>Cold Outreach</span>
                         </button>
                         <button
                             type="button"
-                            onClick={() => setActiveTab("resume")}
-                            className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
-                                activeTab === "resume"
+                            onClick={() => setActiveTab("application-email")}
+                            className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap ${activeTab === "application-email"
                                     ? "bg-white text-slate-900 shadow-sm font-semibold"
                                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-                            }`}
+                                }`}
+                        >
+                            <Mail className="size-4 text-indigo-600 shrink-0" />
+                            <span>Application Email</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("resume")}
+                            className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap ${activeTab === "resume"
+                                    ? "bg-white text-slate-900 shadow-sm font-semibold"
+                                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                                }`}
                         >
                             <FileText className="size-4 text-indigo-600 shrink-0" />
                             <span>Attached Resume</span>
@@ -480,23 +543,23 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                                     ) : (
                                         <Sparkles className="size-3.5" />
                                     )}
-                                    {job.aiCoverLetter ? "Regenerate" : "Generate Cover Letter"}
+                                    {currentCoverLetter ? "Regenerate" : "Generate Cover Letter"}
                                     <Badge variant="secondary" className="text-[10px] bg-indigo-500 text-white ml-1">
                                         {coverLetterRemaining} left
                                     </Badge>
                                 </Button>
                             </div>
 
-                            {job.aiCoverLetter ? (
+                            {currentCoverLetter ? (
                                 <div className="space-y-3">
                                     <div className="relative p-5 rounded-xl border border-slate-200 bg-white font-sans text-xs text-slate-700 leading-relaxed whitespace-pre-line shadow-xs">
-                                        {job.aiCoverLetter}
+                                        {currentCoverLetter}
                                     </div>
                                     <div className="flex justify-end">
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => copyToClipboard(job.aiCoverLetter || "", "cover")}
+                                            onClick={() => copyToClipboard(currentCoverLetter || "", "cover")}
                                             className="gap-1.5 text-xs"
                                         >
                                             {copiedCoverLetter ? (
@@ -547,23 +610,23 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                                     ) : (
                                         <Send className="size-3.5" />
                                     )}
-                                    {job.aiOutreachMessage ? "Regenerate" : "Generate Outreach"}
+                                    {currentOutreach ? "Regenerate" : "Generate Outreach"}
                                     <Badge variant="secondary" className="text-[10px] bg-indigo-500 text-white ml-1">
                                         {outreachRemaining} left
                                     </Badge>
                                 </Button>
                             </div>
 
-                            {job.aiOutreachMessage ? (
+                            {currentOutreach ? (
                                 <div className="space-y-3">
                                     <div className="relative p-5 rounded-xl border border-slate-200 bg-white font-sans text-xs text-slate-700 leading-relaxed whitespace-pre-line shadow-xs">
-                                        {job.aiOutreachMessage}
+                                        {currentOutreach}
                                     </div>
                                     <div className="flex justify-end">
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => copyToClipboard(job.aiOutreachMessage || "", "outreach")}
+                                            onClick={() => copyToClipboard(currentOutreach || "", "outreach")}
                                             className="gap-1.5 text-xs"
                                         >
                                             {copiedOutreach ? (
@@ -585,6 +648,96 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                                     <Send className="size-8 text-slate-300 mx-auto mb-2" />
                                     <p className="text-xs text-slate-500">
                                         No outreach message generated yet. Click above to generate a high-converting message.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+
+                    {activeTab === "application-email" && (
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                <div>
+                                    <h3 className="text-sm font-bold text-slate-900">
+                                        Formal Job Application Email
+                                    </h3>
+                                    <p className="text-xs text-slate-500">
+                                        Custom-crafted submission email with subject line tailored to the job description and your resume achievements.
+                                    </p>
+                                </div>
+                                <Button
+                                    onClick={handleGenerateApplicationEmail}
+                                    disabled={!canGenerateApplicationEmail}
+                                    size="sm"
+                                    className="gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                                >
+                                    {isGeneratingApplicationEmail ? (
+                                        <Loader2 className="size-3.5 animate-spin" />
+                                    ) : (
+                                        <Mail className="size-3.5" />
+                                    )}
+                                    {currentEmail ? "Regenerate Email" : "Generate Application Email"}
+                                    <Badge variant="secondary" className="text-[10px] bg-indigo-500 text-white ml-1">
+                                        {applicationEmailRemaining} left
+                                    </Badge>
+                                </Button>
+                            </div>
+
+
+                            {!hasDescription && (
+                                <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/70 text-xs text-amber-900 flex items-start gap-2.5">
+                                    <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                                    <div>
+                                        <span className="font-semibold block">Job Description Required</span>
+                                        An application email requires a job description so the AI can tailor your pitch directly to the role requirements. Please close this modal and edit the job application to add a description.
+                                    </div>
+                                </div>
+                            )}
+
+                            {!hasResume && (
+                                <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/70 text-xs text-rose-900 flex items-start gap-2.5">
+                                    <AlertCircle className="size-4 text-rose-600 shrink-0 mt-0.5" />
+                                    <div>
+                                        <span className="font-semibold block">Resume Required</span>
+                                        An application email requires candidate resume details for tailored accuracy. Please upload a resume to your library or select one from the Active Resume dropdown above.
+                                    </div>
+                                </div>
+                            )}
+
+                            {currentEmail ? (
+                                <div className="space-y-3">
+                                    <div className="relative p-5 rounded-xl border border-slate-200 bg-white font-sans text-xs text-slate-700 leading-relaxed whitespace-pre-line shadow-xs">
+                                        {currentEmail}
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => copyToClipboard(currentEmail || "", "email")}
+                                            className="gap-1.5 text-xs"
+                                        >
+                                            {copiedEmail ? (
+                                                <>
+                                                    <Check className="size-3.5 text-emerald-600" />
+                                                    Copied to Clipboard!
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Copy className="size-3.5" />
+                                                    Copy Application Email
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="py-12 text-center border-2 border-dashed border-slate-200 rounded-xl p-6 bg-slate-50/50">
+                                    <Mail className="size-8 text-slate-300 mx-auto mb-2" />
+                                    <p className="text-xs text-slate-500">
+                                        {hasDescription && hasResume
+                                            ? "No application email generated yet. Click above to craft a tailored email draft."
+                                            : "Provide both a job description and a candidate resume to generate an accurate application email."}
                                     </p>
                                 </div>
                             )}
@@ -627,8 +780,8 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                                             key={r._id}
                                             onClick={() => setSelectedResumeId(r._id)}
                                             className={`py-3.5 px-4 rounded-xl border cursor-pointer flex items-center justify-between transition-all min-h-[56px] ${selectedResumeId === r._id
-                                                    ? "border-indigo-500 bg-indigo-50/40 ring-1 ring-indigo-500 shadow-xs"
-                                                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
+                                                ? "border-indigo-500 bg-indigo-50/40 ring-1 ring-indigo-500 shadow-xs"
+                                                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50"
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">

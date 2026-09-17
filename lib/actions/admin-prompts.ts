@@ -57,7 +57,7 @@ export async function getAdminPromptsAction(): Promise<{
             dbMap.set(String(p.action), p as Record<string, unknown>);
         }
 
-        const actions: AiActionType[] = ["atsScan", "coverLetter", "outreach"];
+        const actions: AiActionType[] = ["atsScan", "coverLetter", "outreach", "applicationEmail"];
 
         const result: AiPromptItem[] = actions.map((action) => {
             const defaultDef = DEFAULT_AI_PROMPTS[action];
@@ -132,7 +132,7 @@ export async function saveAdminPromptAction(
                     ...rest,
                 },
             },
-            { upsert: true, new: true }
+            { upsert: true, returnDocument: "after" }
         );
 
         revalidatePath("/admin/ai");

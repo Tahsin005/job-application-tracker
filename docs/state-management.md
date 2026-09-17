@@ -127,6 +127,7 @@ export const aiKeys = {
    - `runAtsMatch(jobId, resumeId)`: Triggers GLM-5.3 ATS scan, persists analysis to job, and invalidates `boardKeys.all` + `aiKeys.usage()`.
    - `generateCoverLetter(jobId, resumeId)`: Generates tailored 3-paragraph letter.
    - `generateOutreach(jobId, resumeId)`: Crafts recruiter LinkedIn/email message.
+   - `generateApplicationEmail(jobId, resumeId)`: Generates formal job application submission email (strictly requires job description and resume).
    - `createResume(input)`: Saves resume (PDF or text) to user's library and invalidates `aiKeys.resumes()`.
    - `attachResume(jobId, resumeId)`: Links a specific resume version to a job application.
    - `extractPdfText(file)`: Server-side PDF extraction via `unpdf`.
@@ -139,7 +140,7 @@ Encapsulates administrative operations for managing user telemetry and AI quota 
 
 ### Key Responsibilities
 1. **User Usage & Quota Administration**:
-   - `updateUserUsage(input)`: Validates and updates user feature counts and limits (`atsScanCount`, `coverLetterCount`, `outreachCount`, and their respective limits) with Sonner toast feedback and Next.js router revalidation.
+   - `updateUserUsage(input)`: Validates and updates user feature counts and limits (`atsScanCount`, `coverLetterCount`, `outreachCount`, `applicationEmailCount`, and their respective limits) with Sonner toast feedback and Next.js router revalidation.
 2. **Loading States**: Exposes `isUpdatingUsage` for responsive button feedback and preventing duplicate submissions.
 
 ---
@@ -162,7 +163,7 @@ Encapsulates interaction with the dynamic AI Provider Factory, live probe testin
 
 ## 7. The Admin AI Prompts Facade (`lib/facades/useAdminPromptsFacade.ts`)
 
-Encapsulates prompt management for the three core AI intelligence actions (`atsScan`, `coverLetter`, `outreach`).
+Encapsulates prompt management for the four core AI intelligence actions (`atsScan`, `coverLetter`, `outreach`, `applicationEmail`).
 
 ### Key Responsibilities
 1. **Prompt Customization**:
