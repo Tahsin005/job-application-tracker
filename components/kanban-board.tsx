@@ -7,18 +7,10 @@ import {
     Calendar,
     CheckCircle2,
     Mic,
-    MoreVertical,
-    Trash2,
     XCircle,
     FileText,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import CreateJobApplicationDialog from "./create-job-dialog";
@@ -110,23 +102,9 @@ function DroppableColumn({
                             {column.name}
                         </CardTitle>
                     </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-white hover:bg-white/20"
-                            >
-                                <MoreVertical className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem className="text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Column
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/20 text-white">
+                        {sortedJobs.length}
+                    </span>
                 </div>
             </CardHeader>
 
