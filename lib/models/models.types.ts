@@ -27,6 +27,9 @@ export interface JobApplication {
     aiCoverLetter?: string;
     aiOutreachMessage?: string;
     aiApplicationEmail?: string;
+    appliedDate?: string | Date;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
 }
 
 export interface Column {
