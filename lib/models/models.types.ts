@@ -26,6 +26,7 @@ export interface JobApplication {
     atsAnalysis?: AtsAnalysis;
     aiCoverLetter?: string;
     aiOutreachMessage?: string;
+    aiApplicationEmail?: string;
 }
 
 export interface Column {
@@ -63,6 +64,7 @@ export interface UserUsageSummary {
     atsScan: FeatureQuota;
     coverLetter: FeatureQuota;
     outreach: FeatureQuota;
+    applicationEmail: FeatureQuota;
 }
 
 export interface User {

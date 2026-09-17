@@ -36,6 +36,18 @@ export function CreditIndicator() {
                 >
                     Outreach: {usage.outreach.remaining}/{usage.outreach.limit}
                 </Badge>
+                {usage.applicationEmail && (
+                    <Badge
+                        variant={usage.applicationEmail.remaining > 0 ? "outline" : "destructive"}
+                        className={`px-1.5 py-0 text-[11px] font-normal ${
+                            usage.applicationEmail.remaining > 0
+                                ? "bg-indigo-50/50 text-indigo-700 border-indigo-200"
+                                : ""
+                        }`}
+                    >
+                        Email: {usage.applicationEmail.remaining}/{usage.applicationEmail.limit}
+                    </Badge>
+                )}
             </div>
         </div>
     );

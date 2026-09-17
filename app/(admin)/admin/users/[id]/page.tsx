@@ -152,7 +152,8 @@ async function UserDetailContent({ params }: UserDetailPageProps) {
                             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Generations Remaining</p>
                             <h3 className="text-2xl font-bold text-slate-900 mt-1">
                                 {Math.max(0, usage.coverLetterLimit - usage.coverLetterCount) +
-                                    Math.max(0, usage.outreachLimit - usage.outreachCount)}
+                                    Math.max(0, usage.outreachLimit - usage.outreachCount) +
+                                    Math.max(0, (usage.applicationEmailLimit ?? 3) - (usage.applicationEmailCount ?? 0))}
                             </h3>
                         </div>
                         <div className="h-10 w-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">

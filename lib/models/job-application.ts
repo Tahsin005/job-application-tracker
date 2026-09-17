@@ -30,6 +30,7 @@ export interface IJobApplication extends Document {
     atsAnalysis?: IAtsAnalysis;
     aiCoverLetter?: string;
     aiOutreachMessage?: string;
+    aiApplicationEmail?: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -114,6 +115,9 @@ const JobApplicationSchema = new Schema<IJobApplication>(
             type: String,
         },
         aiOutreachMessage: {
+            type: String,
+        },
+        aiApplicationEmail: {
             type: String,
         },
     },

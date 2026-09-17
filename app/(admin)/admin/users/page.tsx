@@ -159,6 +159,9 @@ async function UsersListContent({
                                         <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-100 font-medium">
                                             Outreach: {u.usage.outreachUsed}/{u.usage.outreachLimit}
                                         </span>
+                                        <span className="bg-sky-50 text-sky-700 px-2 py-0.5 rounded border border-sky-100 font-medium">
+                                            Email: {u.usage.applicationEmailUsed ?? 0}/{u.usage.applicationEmailLimit ?? 3}
+                                        </span>
                                     </div>
                                 </div>
 
@@ -257,6 +260,9 @@ async function UsersListContent({
                                                 </span>
                                                 <span className="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded border border-purple-100">
                                                     Outreach: {u.usage.outreachUsed}/{u.usage.outreachLimit}
+                                                </span>
+                                                <span className="bg-sky-50 text-sky-700 px-1.5 py-0.5 rounded border border-sky-100">
+                                                    Email: {u.usage.applicationEmailUsed ?? 0}/{u.usage.applicationEmailLimit ?? 3}
                                                 </span>
                                             </div>
                                         </td>

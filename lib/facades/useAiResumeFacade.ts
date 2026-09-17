@@ -8,6 +8,7 @@ import {
     useAtsMatchMutation,
     useCoverLetterMutation,
     useOutreachMutation,
+    useApplicationEmailMutation,
     useCreateResumeMutation,
     useSetDefaultResumeMutation,
     useDeleteResumeMutation,
@@ -26,6 +27,7 @@ export function useAiResumeFacade() {
     const atsMatchMutation = useAtsMatchMutation();
     const coverLetterMutation = useCoverLetterMutation();
     const outreachMutation = useOutreachMutation();
+    const applicationEmailMutation = useApplicationEmailMutation();
     const createResumeMutation = useCreateResumeMutation();
     const setDefaultResumeMutation = useSetDefaultResumeMutation();
     const deleteResumeMutation = useDeleteResumeMutation();
@@ -34,7 +36,7 @@ export function useAiResumeFacade() {
     const defaultResume = resumes.find((r) => r.isDefault) || resumes[0] || null;
 
     async function pollJobCompletion(
-        type: "atsScan" | "coverLetter" | "outreach",
+        type: "atsScan" | "coverLetter" | "outreach" | "applicationEmail",
         jobId: string,
         toastId: string | number
     ) {
@@ -62,8 +64,8 @@ export function useAiResumeFacade() {
             }
 
             if (status?.status === "completed") {
-                await queryClient.invalidateQueries({ queryKey: boardKeys.all });
-                await queryClient.invalidateQueries({ queryKey: aiKeys.usage() });
+                await queryClient.invalidateQueries({ queryKey: boardKeys.all, refetchType: "all" });
+                await queryClient.invalidateQueries({ queryKey: aiKeys.usage(), refetchType: "all" });
                 return status.data;
             }
             if (status?.status === "failed") {
@@ -115,7 +117,7 @@ export function useAiResumeFacade() {
             toast.success(`Cover letter generated! (${result?.remaining ?? 0} tries left)`, {
                 id: toastId,
             });
-            return finalData?.coverLetter;
+            return finalData?.coverLetter || (typeof finalData === "string" ? finalData : null);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Failed to generate cover letter.";
             toast.error(message, { id: toastId });
@@ -138,9 +140,32 @@ export function useAiResumeFacade() {
             toast.success(`Outreach message generated! (${result?.remaining ?? 0} tries left)`, {
                 id: toastId,
             });
-            return finalData?.outreachMessage;
+            return finalData?.outreachMessage || (typeof finalData === "string" ? finalData : null);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "Failed to generate outreach message.";
+            toast.error(message, { id: toastId });
+            throw err;
+        }
+    }
+
+    async function generateApplicationEmail(jobId: string, resumeId?: string) {
+        const toastId = toast.loading("Crafting job application email...");
+        try {
+            const result = await applicationEmailMutation.mutateAsync({ jobId, resumeId });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let finalData = (result as any)?.result;
+
+            if (result?.status === "queued") {
+                toast.loading("Queued in background. Generating application email...", { id: toastId });
+                finalData = await pollJobCompletion("applicationEmail", jobId, toastId);
+            }
+
+            toast.success(`Application email generated! (${result?.remaining ?? 0} tries left)`, {
+                id: toastId,
+            });
+            return finalData?.applicationEmail || (typeof finalData === "string" ? finalData : null);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Failed to generate application email.";
             toast.error(message, { id: toastId });
             throw err;
         }
@@ -223,10 +248,12 @@ export function useAiResumeFacade() {
         isAnalyzingAts: atsMatchMutation.isPending,
         isGeneratingCoverLetter: coverLetterMutation.isPending,
         isGeneratingOutreach: outreachMutation.isPending,
+        isGeneratingApplicationEmail: applicationEmailMutation.isPending,
         isSavingResume: createResumeMutation.isPending,
         runAtsMatch,
         generateCoverLetter,
         generateOutreach,
+        generateApplicationEmail,
         createResume,
         setDefaultResume,
         deleteResume,

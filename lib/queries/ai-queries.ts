@@ -1,8 +1,21 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Resume, UserUsageSummary } from "../models/models.types";
+import { AtsAnalysis, Board, Resume, UserUsageSummary } from "../models/models.types";
 import { boardKeys } from "./board-queries";
+
+interface AiMutationResponse {
+    status?: "completed" | "queued";
+    jobId?: string;
+    remaining?: number;
+    limit?: number;
+    result?: {
+        analysis?: AtsAnalysis;
+        coverLetter?: string;
+        outreachMessage?: string;
+        applicationEmail?: string;
+    };
+}
 import {
     getUserResumes,
     createResumeAction,
@@ -14,6 +27,7 @@ import {
     runAtsMatchAction,
     generateCoverLetterAction,
     generateOutreachAction,
+    generateApplicationEmailAction,
     getUserUsageAction,
 } from "../actions/ai-intelligence";
 import { CreateResumeInput } from "../validations/resume";
@@ -26,7 +40,7 @@ export const aiKeys = {
 };
 
 export function useAiJobStatusQuery(
-    type: "atsScan" | "coverLetter" | "outreach" | null,
+    type: "atsScan" | "coverLetter" | "outreach" | "applicationEmail" | null,
     jobId: string | null,
     enabled = false
 ) {
@@ -88,9 +102,43 @@ export function useAtsMatchMutation() {
             if (res.error) throw new Error(res.error);
             return res.data;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: boardKeys.all });
-            queryClient.invalidateQueries({ queryKey: aiKeys.usage() });
+        onSuccess: (data) => {
+            const parsed = data as AiMutationResponse | undefined;
+            const result = parsed?.result;
+            if (parsed?.remaining != null) {
+                const remaining = parsed.remaining;
+                const limit = parsed.limit;
+                queryClient.setQueryData(aiKeys.usage(), (old: UserUsageSummary | undefined) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        atsScan: {
+                            ...old.atsScan,
+                            remaining,
+                            used: (limit ?? old.atsScan.limit) - remaining,
+                            limit: limit ?? old.atsScan.limit,
+                        },
+                    };
+                });
+            }
+            if (parsed?.jobId && result?.analysis) {
+                queryClient.setQueryData(boardKeys.current(), (oldBoard: Board | undefined) => {
+                    if (!oldBoard?.columns) return oldBoard;
+                    return {
+                        ...oldBoard,
+                        columns: oldBoard.columns.map((col) => ({
+                            ...col,
+                            jobApplications: (col.jobApplications || []).map((j) =>
+                                j._id === parsed.jobId
+                                    ? { ...j, atsAnalysis: result.analysis }
+                                    : j
+                            ),
+                        })),
+                    };
+                });
+            }
+            queryClient.invalidateQueries({ queryKey: boardKeys.all, refetchType: "all" });
+            queryClient.invalidateQueries({ queryKey: aiKeys.usage(), refetchType: "all" });
         },
     });
 }
@@ -104,9 +152,43 @@ export function useCoverLetterMutation() {
             if (res.error) throw new Error(res.error);
             return res.data;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: boardKeys.all });
-            queryClient.invalidateQueries({ queryKey: aiKeys.usage() });
+        onSuccess: (data) => {
+            const parsed = data as AiMutationResponse | undefined;
+            const result = parsed?.result;
+            if (parsed?.remaining != null) {
+                const remaining = parsed.remaining;
+                const limit = parsed.limit;
+                queryClient.setQueryData(aiKeys.usage(), (old: UserUsageSummary | undefined) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        coverLetter: {
+                            ...old.coverLetter,
+                            remaining,
+                            used: (limit ?? old.coverLetter.limit) - remaining,
+                            limit: limit ?? old.coverLetter.limit,
+                        },
+                    };
+                });
+            }
+            if (parsed?.jobId && result?.coverLetter) {
+                queryClient.setQueryData(boardKeys.current(), (oldBoard: Board | undefined) => {
+                    if (!oldBoard?.columns) return oldBoard;
+                    return {
+                        ...oldBoard,
+                        columns: oldBoard.columns.map((col) => ({
+                            ...col,
+                            jobApplications: (col.jobApplications || []).map((j) =>
+                                j._id === parsed.jobId
+                                    ? { ...j, aiCoverLetter: result.coverLetter }
+                                    : j
+                            ),
+                        })),
+                    };
+                });
+            }
+            queryClient.invalidateQueries({ queryKey: boardKeys.all, refetchType: "all" });
+            queryClient.invalidateQueries({ queryKey: aiKeys.usage(), refetchType: "all" });
         },
     });
 }
@@ -120,9 +202,93 @@ export function useOutreachMutation() {
             if (res.error) throw new Error(res.error);
             return res.data;
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: boardKeys.all });
-            queryClient.invalidateQueries({ queryKey: aiKeys.usage() });
+        onSuccess: (data) => {
+            const parsed = data as AiMutationResponse | undefined;
+            const result = parsed?.result;
+            if (parsed?.remaining != null) {
+                const remaining = parsed.remaining;
+                const limit = parsed.limit;
+                queryClient.setQueryData(aiKeys.usage(), (old: UserUsageSummary | undefined) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        outreach: {
+                            ...old.outreach,
+                            remaining,
+                            used: (limit ?? old.outreach.limit) - remaining,
+                            limit: limit ?? old.outreach.limit,
+                        },
+                    };
+                });
+            }
+            if (parsed?.jobId && result?.outreachMessage) {
+                queryClient.setQueryData(boardKeys.current(), (oldBoard: Board | undefined) => {
+                    if (!oldBoard?.columns) return oldBoard;
+                    return {
+                        ...oldBoard,
+                        columns: oldBoard.columns.map((col) => ({
+                            ...col,
+                            jobApplications: (col.jobApplications || []).map((j) =>
+                                j._id === parsed.jobId
+                                    ? { ...j, aiOutreachMessage: result.outreachMessage }
+                                    : j
+                            ),
+                        })),
+                    };
+                });
+            }
+            queryClient.invalidateQueries({ queryKey: boardKeys.all, refetchType: "all" });
+            queryClient.invalidateQueries({ queryKey: aiKeys.usage(), refetchType: "all" });
+        },
+    });
+}
+
+export function useApplicationEmailMutation() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload: { jobId: string; resumeId?: string }) => {
+            const res = await generateApplicationEmailAction(payload);
+            if (res.error) throw new Error(res.error);
+            return res.data;
+        },
+        onSuccess: (data) => {
+            const parsed = data as AiMutationResponse | undefined;
+            const result = parsed?.result;
+            if (parsed?.remaining != null) {
+                const remaining = parsed.remaining;
+                const limit = parsed.limit;
+                queryClient.setQueryData(aiKeys.usage(), (old: UserUsageSummary | undefined) => {
+                    if (!old) return old;
+                    return {
+                        ...old,
+                        applicationEmail: {
+                            ...old.applicationEmail,
+                            remaining,
+                            used: (limit ?? old.applicationEmail.limit) - remaining,
+                            limit: limit ?? old.applicationEmail.limit,
+                        },
+                    };
+                });
+            }
+            if (parsed?.jobId && result?.applicationEmail) {
+                queryClient.setQueryData(boardKeys.current(), (oldBoard: Board | undefined) => {
+                    if (!oldBoard?.columns) return oldBoard;
+                    return {
+                        ...oldBoard,
+                        columns: oldBoard.columns.map((col) => ({
+                            ...col,
+                            jobApplications: (col.jobApplications || []).map((j) =>
+                                j._id === parsed.jobId
+                                    ? { ...j, aiApplicationEmail: result.applicationEmail }
+                                    : j
+                            ),
+                        })),
+                    };
+                });
+            }
+            queryClient.invalidateQueries({ queryKey: boardKeys.all, refetchType: "all" });
+            queryClient.invalidateQueries({ queryKey: aiKeys.usage(), refetchType: "all" });
         },
     });
 }

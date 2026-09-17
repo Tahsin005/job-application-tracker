@@ -11,7 +11,7 @@ export const redis =
         })
         : null;
 
-export type AiTaskType = "atsScan" | "coverLetter" | "outreach";
+export type AiTaskType = "atsScan" | "coverLetter" | "outreach" | "applicationEmail";
 
 export type AiJobState = "queued" | "processing" | "completed" | "failed";
 

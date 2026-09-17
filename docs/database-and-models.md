@@ -75,6 +75,7 @@ Represents an individual job application card.
   - `atsAnalysis`: Object containing `score`, `missingKeywords`, `matchedKeywords`, `actionVerbRecommendations`, `summary`, `analyzedAt`, `resumeName`.
   - `aiCoverLetter`: string (optional).
   - `aiOutreachMessage`: string (optional).
+  - `aiApplicationEmail`: string (optional).
   - `timestamps`: `createdAt`, `updatedAt`.
 
 #### `Resume` (`lib/models/resume.ts`)
@@ -98,6 +99,8 @@ Enforces per-user feature-wise quotas (default: 3 tries per feature) with atomic
   - `coverLetterLimit`: number (default: 3).
   - `outreachCount`: number (default: 0).
   - `outreachLimit`: number (default: 3).
+  - `applicationEmailCount`: number (default: 0).
+  - `applicationEmailLimit`: number (default: 3).
   - `timestamps`: `createdAt`, `updatedAt`.
 
 ---

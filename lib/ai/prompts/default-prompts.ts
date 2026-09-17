@@ -1,7 +1,7 @@
 import connectDB from "@/lib/db";
 import { AiPrompt as AiPromptModel } from "@/lib/models";
 
-export type AiActionType = "atsScan" | "coverLetter" | "outreach";
+export type AiActionType = "atsScan" | "coverLetter" | "outreach" | "applicationEmail";
 
 export interface AiPromptDefinition {
     action: AiActionType;
@@ -102,6 +102,42 @@ Job Context:
 {{jobDescription}}
 
 Candidate Background:
+{{resumeText}}`,
+        supportedVariables: [
+            { key: "{{company}}", label: "Target Company Name" },
+            { key: "{{jobTitle}}", label: "Target Job Title / Position" },
+            { key: "{{jobDescription}}", label: "Job Description Text" },
+            { key: "{{resumeText}}", label: "Candidate Resume Text" },
+        ],
+    },
+    applicationEmail: {
+        action: "applicationEmail",
+        name: "Job Application Email",
+        description:
+            "Generates a formal, tailored job application email with subject line, combining resume achievements and specific job requirements.",
+        systemPrompt: `You are an expert executive career advisor and professional communications strategist.
+Write a polished, highly persuasive formal job application email that a candidate sends to formally submit their application with their resume attached.
+
+Structure:
+- Subject Line: Include a crisp, professional subject line at the very top, format: "Subject: Application for {{jobTitle}} - [Candidate Name or Value Hook]"
+- Salutation: Formal greeting addressing the Hiring Team or Hiring Manager at {{company}}.
+- Opening Paragraph: State clearly that the candidate is applying for the {{jobTitle}} role at {{company}}, referencing their genuine excitement for the team and mission.
+- Core Value Pitch (1-2 paragraphs or bullet points): Explicitly connect 2-3 specific accomplishments and skills from the candidate's resume with the target challenges and requirements detailed in the job description.
+- Attached Resume Reference: Mention that their resume is attached for comprehensive review.
+- Closing & Call to Action: Reiterate interest, express enthusiasm for an introductory conversation or interview, and close with a professional sign-off (e.g., "Sincerely," or "Best regards,").
+
+Rules:
+- Professional, crisp, and confident tone.
+- Do NOT use generic placeholder clichés like "I am writing to express my interest in your job opening."
+- Tailor specifically to the job description and resume highlights provided.
+- Do not leave bracketed unfilled placeholders like [Insert Skills Here]; write real, context-aware content ready to send.`,
+        userPromptTemplate: `Company: {{company}}
+Position: {{jobTitle}}
+
+Job Description:
+{{jobDescription}}
+
+Candidate Resume Highlights:
 {{resumeText}}`,
         supportedVariables: [
             { key: "{{company}}", label: "Target Company Name" },

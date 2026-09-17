@@ -22,6 +22,8 @@ interface QuotaEditorCardProps {
         coverLetterLimit: number;
         outreachCount: number;
         outreachLimit: number;
+        applicationEmailCount?: number;
+        applicationEmailLimit?: number;
     };
 }
 
@@ -48,6 +50,8 @@ export default function QuotaEditorCard({
             coverLetterLimit: initialUsage.coverLetterLimit,
             outreachCount: initialUsage.outreachCount,
             outreachLimit: initialUsage.outreachLimit,
+            applicationEmailCount: initialUsage.applicationEmailCount ?? 0,
+            applicationEmailLimit: initialUsage.applicationEmailLimit ?? 3,
         },
     });
 
@@ -57,11 +61,14 @@ export default function QuotaEditorCard({
     const watchedCoverLimit = watch("coverLetterLimit");
     const watchedOutreachCount = watch("outreachCount");
     const watchedOutreachLimit = watch("outreachLimit");
+    const watchedEmailCount = watch("applicationEmailCount");
+    const watchedEmailLimit = watch("applicationEmailLimit");
 
     const handleResetAllCounts = () => {
         setValue("atsScanCount", 0, { shouldValidate: true, shouldDirty: true });
         setValue("coverLetterCount", 0, { shouldValidate: true, shouldDirty: true });
         setValue("outreachCount", 0, { shouldValidate: true, shouldDirty: true });
+        setValue("applicationEmailCount", 0, { shouldValidate: true, shouldDirty: true });
         toast.info("Reset all used counts to 0 in form. Click 'Save Changes' to apply.");
     };
 
@@ -70,6 +77,7 @@ export default function QuotaEditorCard({
         setValue("atsScanLimit", safe(watchedAtsLimit) + amount, { shouldValidate: true, shouldDirty: true });
         setValue("coverLetterLimit", safe(watchedCoverLimit) + amount, { shouldValidate: true, shouldDirty: true });
         setValue("outreachLimit", safe(watchedOutreachLimit) + amount, { shouldValidate: true, shouldDirty: true });
+        setValue("applicationEmailLimit", safe(watchedEmailLimit) + amount, { shouldValidate: true, shouldDirty: true });
         toast.info(`Added +${amount} to all feature limits in form. Click 'Save Changes' to apply.`);
     };
 
@@ -277,6 +285,58 @@ export default function QuotaEditorCard({
                                 />
                                 {errors.outreachLimit && (
                                     <p className="text-xs text-red-600">{errors.outreachLimit.message}</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/30 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm text-slate-900">Job Application Email</span>
+                                <Badge variant="outline" className="text-[11px] bg-sky-50 text-sky-700 border-sky-200">
+                                    applicationEmail
+                                </Badge>
+                            </div>
+                            <div className="text-xs text-slate-500">
+                                Remaining:{" "}
+                                <span className="font-bold text-slate-800">
+                                    {Math.max(0, Number(watchedEmailLimit) - Number(watchedEmailCount))}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label htmlFor="applicationEmailCount" className="text-xs text-slate-600">
+                                    Used Attempts
+                                </Label>
+                                <Input
+                                    id="applicationEmailCount"
+                                    type="number"
+                                    min={0}
+                                    {...register("applicationEmailCount")}
+                                    className="bg-white"
+                                />
+                                {errors.applicationEmailCount && (
+                                    <p className="text-xs text-red-600">{errors.applicationEmailCount.message}</p>
+                                )}
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label htmlFor="applicationEmailLimit" className="text-xs text-slate-600">
+                                    Total Limit Allowance
+                                </Label>
+                                <Input
+                                    id="applicationEmailLimit"
+                                    type="number"
+                                    min={0}
+                                    {...register("applicationEmailLimit")}
+                                    className="bg-white"
+                                />
+                                {errors.applicationEmailLimit && (
+                                    <p className="text-xs text-red-600">{errors.applicationEmailLimit.message}</p>
                                 )}
                             </div>
                         </div>
