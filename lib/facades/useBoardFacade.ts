@@ -12,6 +12,8 @@ import {
 import { useBoardStore } from "../store/board-store";
 import { toast } from "sonner";
 import { CreateJobApplicationInput, UpdateJobApplicationInput } from "../validations/job-application";
+import { computeBoardAnalytics } from "../utils/analytics";
+import { exportToCSV, exportToJSON } from "../utils/export-data";
 
 export function useBoardFacade(initialBoard?: Board | null) {
     const {
@@ -33,6 +35,8 @@ export function useBoardFacade(initialBoard?: Board | null) {
     const setSearchQuery = useBoardStore((s) => s.setSearchQuery);
     const selectedTag = useBoardStore((s) => s.selectedTag);
     const setSelectedTag = useBoardStore((s) => s.setSelectedTag);
+    const activeTab = useBoardStore((s) => s.activeTab);
+    const setActiveTab = useBoardStore((s) => s.setActiveTab);
     const resetFilters = useBoardStore((s) => s.resetFilters);
     const columns = board?.columns;
 
@@ -142,6 +146,32 @@ export function useBoardFacade(initialBoard?: Board | null) {
         }
     };
 
+    const analytics = useMemo(() => {
+        return computeBoardAnalytics(board?.columns);
+    }, [board?.columns]);
+
+    const exportAsCSV = () => {
+        try {
+            const count = exportToCSV(board?.columns);
+            toast.success(`Exported ${count} job application${count === 1 ? "" : "s"} to CSV`);
+        } catch (err) {
+            toast.error("Failed to export CSV", {
+                description: err instanceof Error ? err.message : "An unexpected error occurred.",
+            });
+        }
+    };
+
+    const exportAsJSON = (user?: { name?: string; email?: string } | null) => {
+        try {
+            const count = exportToJSON(board, user);
+            toast.success(`Exported ${count} job application${count === 1 ? "" : "s"} to JSON`);
+        } catch (err) {
+            toast.error("Failed to export JSON", {
+                description: err instanceof Error ? err.message : "An unexpected error occurred.",
+            });
+        }
+    };
+
     return {
         board,
         columns: filteredColumns,
@@ -155,6 +185,8 @@ export function useBoardFacade(initialBoard?: Board | null) {
         setSearchQuery,
         selectedTag,
         setSelectedTag,
+        activeTab,
+        setActiveTab,
         resetFilters,
         isMutating:
             createMutation.isPending ||
@@ -166,5 +198,8 @@ export function useBoardFacade(initialBoard?: Board | null) {
         updateJob,
         deleteJob,
         refetchBoard: refetch,
+        analytics,
+        exportAsCSV,
+        exportAsJSON,
     };
 }
