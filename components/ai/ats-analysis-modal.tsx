@@ -47,6 +47,7 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
     const [localCoverLetter, setLocalCoverLetter] = useState<string | null>(null);
     const [localOutreach, setLocalOutreach] = useState<string | null>(null);
     const [localAtsAnalysis, setLocalAtsAnalysis] = useState<AtsAnalysis | null>(null);
+    const [userSelectedResumeId, setSelectedResumeId] = useState<string | null>(null);
     const [prevJobId, setPrevJobId] = useState(job._id);
 
     if (job._id !== prevJobId) {
@@ -55,6 +56,7 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
         setLocalCoverLetter(null);
         setLocalOutreach(null);
         setLocalAtsAnalysis(null);
+        setSelectedResumeId(null);
     }
 
     const {
@@ -71,8 +73,6 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
         generateApplicationEmail,
         attachResume,
     } = useAiResumeFacade();
-
-    const [userSelectedResumeId, setSelectedResumeId] = useState<string | null>(null);
 
     const isValidUserSelection =
         userSelectedResumeId && resumes.some((r) => r._id === userSelectedResumeId);

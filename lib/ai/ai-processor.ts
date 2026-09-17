@@ -171,9 +171,6 @@ export async function processAiTask(payload: AiTaskPayload): Promise<{
             job.aiApplicationEmail = applicationEmail;
             job.markModified("aiApplicationEmail");
             await job.save();
-            await JobApplication.findByIdAndUpdate(jobId, {
-                $set: { aiApplicationEmail: applicationEmail },
-            });
 
             resultData = {
                 applicationEmail,

@@ -86,24 +86,24 @@ export const UserUsage =
     mongoose.models.UserUsage || mongoose.model<IUserUsage>("UserUsage", UserUsageSchema);
 
 export async function getOrCreateUserUsage(userId: string): Promise<IUserUsage> {
-    let usage = await UserUsage.findOne({ userId });
+    const usage = await UserUsage.findOneAndUpdate(
+        { userId },
+        {
+            $setOnInsert: {
+                userId,
+                atsScanCount: 0,
+                atsScanLimit: DEFAULT_LIMITS.atsScan,
+                coverLetterCount: 0,
+                coverLetterLimit: DEFAULT_LIMITS.coverLetter,
+                outreachCount: 0,
+                outreachLimit: DEFAULT_LIMITS.outreach,
+                applicationEmailCount: 0,
+                applicationEmailLimit: DEFAULT_LIMITS.applicationEmail,
+            },
+        },
+        { upsert: true, returnDocument: "after" }
+    );
 
-    if (!usage) {
-        usage = await UserUsage.create({
-            userId,
-            atsScanCount: 0,
-            atsScanLimit: DEFAULT_LIMITS.atsScan,
-            coverLetterCount: 0,
-            coverLetterLimit: DEFAULT_LIMITS.coverLetter,
-            outreachCount: 0,
-            outreachLimit: DEFAULT_LIMITS.outreach,
-            applicationEmailCount: 0,
-            applicationEmailLimit: DEFAULT_LIMITS.applicationEmail,
-        });
-        return usage;
-    }
-
-    // Auto-backfill any newly introduced feature quotas on existing user documents
     const updates: Record<string, unknown> = {};
     if (usage.atsScanCount == null) updates.atsScanCount = 0;
     if (usage.atsScanLimit == null) updates.atsScanLimit = DEFAULT_LIMITS.atsScan;
@@ -115,14 +115,23 @@ export async function getOrCreateUserUsage(userId: string): Promise<IUserUsage> 
     if (usage.applicationEmailLimit == null) updates.applicationEmailLimit = DEFAULT_LIMITS.applicationEmail;
 
     if (Object.keys(updates).length > 0) {
+        const conditions = Object.keys(updates).map((field) => ({
+            $or: [{ [field]: { $exists: false } }, { [field]: null }],
+        }));
+
         const updated = await UserUsage.findOneAndUpdate(
-            { userId },
+            {
+                userId,
+                $or: conditions,
+            },
             { $set: updates },
             { returnDocument: "after" }
         );
         if (updated) {
             return updated as IUserUsage;
         }
+        const fresh = await UserUsage.findOne({ userId });
+        if (fresh) return fresh as IUserUsage;
     }
 
     return usage as IUserUsage;
