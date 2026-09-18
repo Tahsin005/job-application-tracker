@@ -47,18 +47,22 @@ const DURATION_OPTIONS = [
 ];
 
 function formatDefaultDateTime(dateInput?: string | Date): string {
-    const d = dateInput ? new Date(dateInput) : new Date(Date.now() + 24 * 60 * 60 * 1000);
-    // Round to nearest 15 minutes
+    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+
+    if (dateInput) {
+        const existing = new Date(dateInput);
+        return `${existing.getFullYear()}-${pad(existing.getMonth() + 1)}-${pad(
+            existing.getDate()
+        )}T${pad(existing.getHours())}:${pad(existing.getMinutes())}`;
+    }
+
+    const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    // Round to next 15 minutes for new rounds only
     d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15, 0, 0);
 
-    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-    const year = d.getFullYear();
-    const month = pad(d.getMonth() + 1);
-    const day = pad(d.getDate());
-    const hours = pad(d.getHours());
-    const minutes = pad(d.getMinutes());
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+        d.getHours()
+    )}:${pad(d.getMinutes())}`;
 }
 
 export function InterviewRoundForm({

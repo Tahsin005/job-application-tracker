@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+const isValidHttpUrl = (val?: string) => {
+    if (!val || val.length === 0) return true;
+    try {
+        const parsed = new URL(val);
+        return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+        return false;
+    }
+};
+
 export const createJobApplicationSchema = z.object({
     company: z.string().trim().min(1, "Company name is required"),
     position: z.string().trim().min(1, "Position title is required"),
@@ -8,10 +18,7 @@ export const createJobApplicationSchema = z.object({
     jobUrl: z
         .string()
         .optional()
-        .refine(
-            (val) => !val || val.length === 0 || z.string().url().safeParse(val).success,
-            { message: "Please enter a valid URL" }
-        )
+        .refine(isValidHttpUrl, { message: "Please enter a valid URL" })
         .default(""),
     tags: z.string().optional().default(""),
     description: z.string().optional().default(""),
@@ -36,10 +43,9 @@ export const interviewRoundSchema = z.object({
         .string()
         .trim()
         .optional()
-        .refine(
-            (val) => !val || val.length === 0 || z.string().url().safeParse(val).success,
-            { message: "Please enter a valid URL (e.g. https://meet.google.com/...)" }
-        )
+        .refine(isValidHttpUrl, {
+            message: "Please enter a valid URL (e.g. https://meet.google.com/...)",
+        })
         .default(""),
     location: z.string().trim().optional().default(""),
     notes: z.string().trim().optional().default(""),
@@ -59,10 +65,7 @@ export const updateJobApplicationSchema = z.object({
     jobUrl: z
         .string()
         .optional()
-        .refine(
-            (val) => !val || val.length === 0 || z.string().url().safeParse(val).success,
-            { message: "Please enter a valid URL" }
-        )
+        .refine(isValidHttpUrl, { message: "Please enter a valid URL" })
         .default(""),
     tags: z.string().optional().default(""),
     description: z.string().optional().default(""),

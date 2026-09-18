@@ -168,10 +168,21 @@ export function InterviewsTab({ job }: InterviewsTabProps) {
         if (diffHours < 0) {
             return "Earlier today";
         }
-        if (diffHours <= 24) {
-            return "Tomorrow";
+        if (diffHours < 1) {
+            return "Starting soon";
         }
-        const daysAhead = Math.round(diffHours / 24);
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const target = new Date(dateVal);
+        target.setHours(0, 0, 0, 0);
+        const daysAhead = Math.round(
+            (target.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        if (daysAhead === 0) {
+            const hours = Math.round(diffHours);
+            return `In ${hours} hour${hours === 1 ? "" : "s"}`;
+        }
+        if (daysAhead === 1) return "Tomorrow";
         return `In ${daysAhead} days`;
     };
 
