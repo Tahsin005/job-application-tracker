@@ -12,17 +12,26 @@ export function getClientIp(
             ? source.headers
             : (source as { get(name: string): string | null });
 
-    const xForwardedFor = headers.get("x-forwarded-for");
-    if (xForwardedFor) {
-        const firstIp = xForwardedFor.split(",")[0].trim();
-        if (firstIp) return firstIp;
-    }
-
-    return (
+    const platformIp =
         headers.get("cf-connecting-ip") ||
         headers.get("x-real-ip") ||
-        "127.0.0.1"
-    );
+        headers.get("x-vercel-forwarded-for");
+
+    if (platformIp) {
+        return platformIp.trim();
+    }
+
+    const xForwardedFor = headers.get("x-forwarded-for");
+    if (xForwardedFor) {
+        const parts = xForwardedFor
+            .split(",")
+            .map((part) => part.trim())
+            .filter(Boolean);
+        const trustedClientIp = parts[parts.length - 1];
+        if (trustedClientIp) return trustedClientIp;
+    }
+
+    return "127.0.0.1";
 }
 
 export function generateRateLimitKey({

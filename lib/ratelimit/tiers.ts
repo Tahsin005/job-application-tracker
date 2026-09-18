@@ -32,10 +32,7 @@ export function resolveTier(pathname: string): RateLimitTier {
         return "auth";
     }
 
-    if (
-        pathname.startsWith("/api/ai") ||
-        pathname.startsWith("/api/workers")
-    ) {
+    if (pathname.startsWith("/api/ai")) {
         return "sensitive";
     }
 

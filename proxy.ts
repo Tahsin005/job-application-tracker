@@ -17,6 +17,7 @@ export default async function proxy(request: NextRequest) {
             const response = await fetch(`${request.nextUrl.origin}/api/auth/get-session`, {
                 headers: {
                     cookie: cookieHeader,
+                    "x-forwarded-for": request.headers.get("x-forwarded-for") || "",
                 },
             });
             session = await response.json().catch(() => null);
@@ -26,9 +27,15 @@ export default async function proxy(request: NextRequest) {
     }
 
     // 1. Global & Route-Level Rate Limiting (Keyed by IP+Route or IP+User)
-    const rateLimitResponse = await checkRouteRateLimit(request, session?.user || null);
-    if (rateLimitResponse) {
-        return rateLimitResponse;
+    // Internal session lookups and signed machine queue callbacks are exempt from proxy rate limits
+    const isExemptFromRateLimit =
+        pathname === "/api/auth/get-session" || pathname.startsWith("/api/workers");
+
+    if (!isExemptFromRateLimit) {
+        const rateLimitResponse = await checkRouteRateLimit(request, session?.user || null);
+        if (rateLimitResponse) {
+            return rateLimitResponse;
+        }
     }
 
     // 2. Route Protection & Authorization
@@ -54,5 +61,7 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+    matcher: [
+        "/((?!api/auth/get-session|api/workers|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    ],
 };
