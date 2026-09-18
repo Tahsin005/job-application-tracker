@@ -333,11 +333,13 @@ async function seed() {
             console.log(`📦 Seeded ${DEFAULT_TOP_UP_PACKAGES.length} default top-up packages`);
         }
 
-        // Seed MFS Providers if none exist
-        const providerCount = await MfsProvider.countDocuments();
-        if (providerCount === 0) {
-            await MfsProvider.insertMany(DEFAULT_MFS_PROVIDERS);
-            console.log(`💳 Seeded ${DEFAULT_MFS_PROVIDERS.length} default MFS providers`);
+        // Seed MFS Providers if none exist (deduplicated by slug)
+        for (const prov of DEFAULT_MFS_PROVIDERS) {
+            const exists = await MfsProvider.findOne({ slug: prov.slug });
+            if (!exists) {
+                await MfsProvider.create(prov);
+                console.log(`💳 Seeded provider "${prov.name}"`);
+            }
         }
 
         // Seed MFS Admin Settings if none exist

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useAdminTopUpFacade } from "@/lib/facades/useTopUpFacade";
+import { useState, useEffect } from "react";
+import { useAdminRequestsFacade } from "@/lib/facades/useTopUpFacade";
 import { TopUpAnalyticsCards } from "@/components/admin/top-up-analytics-cards";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,8 +36,18 @@ import { toast } from "sonner";
 export default function AdminTopUpsPage() {
     const [statusFilter, setStatusFilter] = useState<string>("all");
     const [searchTerm, setSearchTerm] = useState<string>("");
+    const [debouncedSearch, setDebouncedSearch] = useState<string>("");
     const [page, setPage] = useState<number>(1);
     const [copiedTrx, setCopiedTrx] = useState<string | null>(null);
+
+    // Debounce search input to avoid querying on every keystroke
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setPage(1);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     // Reject Dialog State
     const [rejectDialogOpen, setRejectDialogOpen] = useState<boolean>(false);
@@ -54,9 +64,9 @@ export default function AdminTopUpsPage() {
         refetchAnalytics,
         isReviewing,
         reviewRequest,
-    } = useAdminTopUpFacade({
+    } = useAdminRequestsFacade({
         status: statusFilter === "all" ? undefined : statusFilter,
-        search: searchTerm,
+        search: debouncedSearch,
         page,
         limit: 10,
     });
@@ -174,10 +184,7 @@ export default function AdminTopUpsPage() {
                         <Input
                             placeholder="Search by TrxID, name, email..."
                             value={searchTerm}
-                            onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                                setPage(1);
-                            }}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-9 h-9 text-xs bg-slate-50/60 border-slate-200"
                         />
                     </div>

@@ -53,7 +53,7 @@ export const upsertTopUpPackageSchema = z.object({
     tierKey: z.string().trim().min(1, "Tier key is required"),
     order: z.coerce.number().int().min(0, "Order must be a positive integer").default(1),
     price: z.coerce.number().min(0, "Price cannot be negative"),
-    currency: z.string().trim().min(1).default("BDT"),
+    currency: z.literal("BDT").default("BDT"),
     description: z.string().trim().optional().default(""),
     badgeText: z.string().trim().optional().default(""),
     credits: packageCreditsSchema,

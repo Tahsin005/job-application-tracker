@@ -73,41 +73,46 @@ export function useAdminTopUpFacade({
     page,
     limit,
     selectedUserId,
+    scope = "all",
 }: {
     status?: string;
     search?: string;
     page?: number;
     limit?: number;
     selectedUserId?: string;
+    scope?: "all" | "requests" | "catalog";
 } = {}) {
+    const enableRequests = scope === "all" || scope === "requests";
+    const enableCatalog = scope === "all" || scope === "catalog";
+
     // Admin queries & mutations
     const {
         data: requestsData,
         isLoading: isLoadingRequests,
         refetch: refetchRequests,
-    } = useAdminTopUpRequestsQuery({ status, search, page, limit });
+    } = useAdminTopUpRequestsQuery({ status, search, page, limit, enabled: enableRequests });
 
     const {
         data: analytics,
         isLoading: isLoadingAnalytics,
         refetch: refetchAnalytics,
-    } = useAdminTopUpAnalyticsQuery();
+    } = useAdminTopUpAnalyticsQuery({ enabled: enableRequests });
 
     const {
         data: rawAllPackages,
         isLoading: isLoadingAllPackages,
         refetch: refetchAllPackages,
-    } = useAdminPackagesQuery();
+    } = useAdminPackagesQuery({ enabled: enableCatalog });
 
     const allPackages = rawAllPackages || [];
 
-    const { data: mfsSettings, isLoading: isLoadingMfsSettings } = useAdminMfsSettingsQuery();
+    const { data: mfsSettings, isLoading: isLoadingMfsSettings } = useAdminMfsSettingsQuery({ enabled: enableCatalog });
 
     const {
         data: rawAllProviders,
         isLoading: isLoadingAllMfsProviders,
         refetch: refetchAllMfsProviders,
-    } = useAdminMfsProvidersQuery();
+    } = useAdminMfsProvidersQuery({ enabled: enableCatalog });
 
     const allMfsProviders = rawAllProviders || [];
 
@@ -275,3 +280,16 @@ export function useAdminTopUpFacade({
         deleteMfsProvider,
     };
 }
+
+export function useAdminRequestsFacade(
+    options: Omit<NonNullable<Parameters<typeof useAdminTopUpFacade>[0]>, "scope"> = {}
+) {
+    return useAdminTopUpFacade({ ...options, scope: "requests" });
+}
+
+export function useAdminCatalogFacade(
+    options: Omit<NonNullable<Parameters<typeof useAdminTopUpFacade>[0]>, "scope"> = {}
+) {
+    return useAdminTopUpFacade({ ...options, scope: "catalog" });
+}
+

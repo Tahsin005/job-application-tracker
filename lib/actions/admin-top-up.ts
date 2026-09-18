@@ -1,5 +1,6 @@
 "use server";
 
+import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
 import { getSession } from "../auth/auth";
 import connectDB from "../db";
@@ -137,93 +138,187 @@ export async function reviewTopUpRequestAction(rawInput: ReviewTopUpRequestInput
 
         const { requestId, action, rejectionReason } = parsed.data;
 
-        // Atomically claim the pending request to prevent concurrent double-approvals
-        const request = await TopUpRequest.findOneAndUpdate(
-            { _id: requestId, status: "pending" },
-            {
-                $set: {
-                    status: action === "approve" ? "approved" : "rejected",
-                    rejectionReason:
-                        action === "approve"
-                            ? ""
-                            : rejectionReason?.trim() || "Verification rejected by administrator",
-                    reviewedBy: authCheck.userName,
-                    reviewedAt: new Date(),
-                },
-            },
-            { returnDocument: "after" }
-        );
+        let updatedRequestDoc: {
+            _id: string;
+            status: string;
+            packageName: string;
+            amount: number;
+            userId: string;
+        } | null = null;
+        let transactionSupported = true;
 
-        if (!request) {
+        const session = await mongoose.startSession();
+        try {
+            await session.withTransaction(async () => {
+                const request = await TopUpRequest.findOneAndUpdate(
+                    { _id: requestId, status: "pending" },
+                    {
+                        $set: {
+                            status: action === "approve" ? "approved" : "rejected",
+                            rejectionReason:
+                                action === "approve"
+                                    ? ""
+                                    : rejectionReason?.trim() || "Verification rejected by administrator",
+                            reviewedBy: authCheck.userName,
+                            reviewedAt: new Date(),
+                        },
+                    },
+                    { returnDocument: "after", session }
+                );
+
+                if (!request) {
+                    throw new Error("Top-up request not found or has already been reviewed.");
+                }
+
+                if (action === "approve") {
+                    await getOrCreateUserUsage(request.userId, session);
+
+                    const credits = request.creditsSnapshot || {
+                        atsScan: 0,
+                        coverLetter: 0,
+                        outreach: 0,
+                        applicationEmail: 0,
+                    };
+
+                    const updatedUsage = await UserUsage.findOneAndUpdate(
+                        { userId: request.userId },
+                        {
+                            $inc: {
+                                atsScanLimit: credits.atsScan || 0,
+                                coverLetterLimit: credits.coverLetter || 0,
+                                outreachLimit: credits.outreach || 0,
+                                applicationEmailLimit: credits.applicationEmail || 0,
+                            },
+                        },
+                        { returnDocument: "after", session }
+                    );
+
+                    if (!updatedUsage) {
+                        throw new Error("Failed to allocate credits to user usage");
+                    }
+                }
+
+                updatedRequestDoc = {
+                    _id: String(request._id),
+                    status: request.status,
+                    packageName: request.packageName,
+                    amount: request.amount,
+                    userId: request.userId,
+                };
+            });
+        } catch (transErr: unknown) {
+            const msg = transErr instanceof Error ? transErr.message : "";
+            if (msg.includes("Transaction numbers are only allowed on a replica set member or mongos")) {
+                transactionSupported = false;
+            } else {
+                return {
+                    error: msg || "Failed to review top-up request",
+                    data: null,
+                };
+            }
+        } finally {
+            await session.endSession();
+        }
+
+        if (!transactionSupported) {
+            // Standalone MongoDB fallback
+            const request = await TopUpRequest.findOneAndUpdate(
+                { _id: requestId, status: "pending" },
+                {
+                    $set: {
+                        status: action === "approve" ? "approved" : "rejected",
+                        rejectionReason:
+                            action === "approve"
+                                ? ""
+                                : rejectionReason?.trim() || "Verification rejected by administrator",
+                        reviewedBy: authCheck.userName,
+                        reviewedAt: new Date(),
+                    },
+                },
+                { returnDocument: "after" }
+            );
+
+            if (!request) {
+                return {
+                    error: "Top-up request not found or has already been reviewed.",
+                    data: null,
+                };
+            }
+
+            if (action === "approve") {
+                try {
+                    await getOrCreateUserUsage(request.userId);
+                    const credits = request.creditsSnapshot || {
+                        atsScan: 0,
+                        coverLetter: 0,
+                        outreach: 0,
+                        applicationEmail: 0,
+                    };
+
+                    const updatedUsage = await UserUsage.findOneAndUpdate(
+                        { userId: request.userId },
+                        {
+                            $inc: {
+                                atsScanLimit: credits.atsScan || 0,
+                                coverLetterLimit: credits.coverLetter || 0,
+                                outreachLimit: credits.outreach || 0,
+                                applicationEmailLimit: credits.applicationEmail || 0,
+                            },
+                        },
+                        { returnDocument: "after" }
+                    );
+
+                    if (!updatedUsage) {
+                        throw new Error("Failed to allocate credits to user usage");
+                    }
+                } catch (creditError) {
+                    await TopUpRequest.updateOne(
+                        { _id: request._id },
+                        {
+                            $set: {
+                                status: "pending",
+                                reviewedBy: "",
+                                reviewedAt: null,
+                                rejectionReason: "",
+                            },
+                        }
+                    );
+                    return {
+                        error: creditError instanceof Error ? creditError.message : "Failed to allocate credits to user usage",
+                        data: null,
+                    };
+                }
+            }
+
+            updatedRequestDoc = {
+                _id: String(request._id),
+                status: request.status,
+                packageName: request.packageName,
+                amount: request.amount,
+                userId: request.userId,
+            };
+        }
+
+        if (!updatedRequestDoc) {
             return {
-                error: "Top-up request not found or has already been reviewed.",
+                error: "Failed to complete request review",
                 data: null,
             };
         }
 
-        if (action === "approve") {
-            try {
-                // 1. Ensure user usage record exists
-                await getOrCreateUserUsage(request.userId);
-
-                // 2. Increment limits atomically
-                const credits = request.creditsSnapshot || {
-                    atsScan: 0,
-                    coverLetter: 0,
-                    outreach: 0,
-                    applicationEmail: 0,
-                };
-
-                const updatedUsage = await UserUsage.findOneAndUpdate(
-                    { userId: request.userId },
-                    {
-                        $inc: {
-                            atsScanLimit: credits.atsScan || 0,
-                            coverLetterLimit: credits.coverLetter || 0,
-                            outreachLimit: credits.outreach || 0,
-                            applicationEmailLimit: credits.applicationEmail || 0,
-                        },
-                    },
-                    { returnDocument: "after" }
-                );
-
-                if (!updatedUsage) {
-                    throw new Error("Failed to allocate credits to user usage");
-                }
-            } catch (creditError) {
-                // Roll back request status to pending if credit allocation fails
-                await TopUpRequest.updateOne(
-                    { _id: request._id },
-                    {
-                        $set: {
-                            status: "pending",
-                            reviewedBy: "",
-                            reviewedAt: null,
-                            rejectionReason: "",
-                        },
-                    }
-                );
-                console.error("Credit allocation failed, rolled back top-up status:", creditError);
-                return {
-                    error: creditError instanceof Error ? creditError.message : "Failed to allocate credits to user usage",
-                    data: null,
-                };
-            }
-        }
-
         revalidatePath("/admin/top-ups");
         revalidatePath("/admin");
-        revalidatePath(`/admin/users/${request.userId}`);
+        revalidatePath(`/admin/users/${updatedRequestDoc.userId}`);
         revalidatePath("/dashboard");
 
         return {
             error: null,
             data: {
-                id: String(request._id),
-                status: request.status,
-                packageName: request.packageName,
-                amount: request.amount,
-                userId: request.userId,
+                id: updatedRequestDoc._id,
+                status: updatedRequestDoc.status,
+                packageName: updatedRequestDoc.packageName,
+                amount: updatedRequestDoc.amount,
+                userId: updatedRequestDoc.userId,
             },
         };
     } catch (err: unknown) {
@@ -667,6 +762,18 @@ export async function upsertAdminMfsProviderAction(rawInput: UpsertMfsProviderIn
             };
         }
     } catch (err: unknown) {
+        if (
+            err &&
+            typeof err === "object" &&
+            "code" in err &&
+            (err as { code: number }).code === 11000
+        ) {
+            return {
+                error: "A payment provider with this slug already exists",
+                data: null,
+            };
+        }
+
         console.error("Failed to save MFS provider:", err);
         return {
             error: err instanceof Error ? err.message : "Failed to save provider",

@@ -88,11 +88,13 @@ export function useAdminTopUpRequestsQuery({
     search,
     page,
     limit,
+    enabled = true,
 }: {
     status?: string;
     search?: string;
     page?: number;
     limit?: number;
+    enabled?: boolean;
 } = {}) {
     return useQuery({
         queryKey: topUpKeys.adminRequests({ status, search, page, limit }),
@@ -101,10 +103,11 @@ export function useAdminTopUpRequestsQuery({
             if (res.error) throw new Error(res.error);
             return res.data;
         },
+        enabled,
     });
 }
 
-export function useAdminTopUpAnalyticsQuery() {
+export function useAdminTopUpAnalyticsQuery({ enabled = true }: { enabled?: boolean } = {}) {
     return useQuery({
         queryKey: topUpKeys.adminAnalytics(),
         queryFn: async () => {
@@ -113,6 +116,7 @@ export function useAdminTopUpAnalyticsQuery() {
             return res.data;
         },
         staleTime: 1000 * 30,
+        enabled,
     });
 }
 
@@ -132,7 +136,7 @@ export function useAdminReviewTopUpMutation() {
     });
 }
 
-export function useAdminPackagesQuery() {
+export function useAdminPackagesQuery({ enabled = true }: { enabled?: boolean } = {}) {
     return useQuery({
         queryKey: topUpKeys.adminPackages(),
         queryFn: async () => {
@@ -141,6 +145,7 @@ export function useAdminPackagesQuery() {
             return res.data;
         },
         staleTime: 1000 * 60,
+        enabled,
     });
 }
 
@@ -176,7 +181,7 @@ export function useAdminTogglePackageStatusMutation() {
     });
 }
 
-export function useAdminMfsSettingsQuery() {
+export function useAdminMfsSettingsQuery({ enabled = true }: { enabled?: boolean } = {}) {
     return useQuery({
         queryKey: topUpKeys.adminMfs(),
         queryFn: async () => {
@@ -185,6 +190,7 @@ export function useAdminMfsSettingsQuery() {
             return res.data;
         },
         staleTime: 1000 * 60 * 5,
+        enabled,
     });
 }
 
@@ -216,7 +222,7 @@ export function useUserAdminTopUpHistoryQuery(userId: string) {
     });
 }
 
-export function useAdminMfsProvidersQuery() {
+export function useAdminMfsProvidersQuery({ enabled = true }: { enabled?: boolean } = {}) {
     return useQuery({
         queryKey: topUpKeys.adminMfsProviders(),
         queryFn: async () => {
@@ -225,6 +231,7 @@ export function useAdminMfsProvidersQuery() {
             return res.data;
         },
         staleTime: 1000 * 60,
+        enabled,
     });
 }
 

@@ -85,7 +85,7 @@ const UserUsageSchema = new Schema<IUserUsage>(
 export const UserUsage =
     mongoose.models.UserUsage || mongoose.model<IUserUsage>("UserUsage", UserUsageSchema);
 
-export async function getOrCreateUserUsage(userId: string): Promise<IUserUsage> {
+export async function getOrCreateUserUsage(userId: string, session?: mongoose.ClientSession): Promise<IUserUsage> {
     const usage = await UserUsage.findOneAndUpdate(
         { userId },
         {
@@ -101,7 +101,7 @@ export async function getOrCreateUserUsage(userId: string): Promise<IUserUsage> 
                 applicationEmailLimit: DEFAULT_LIMITS.applicationEmail,
             },
         },
-        { upsert: true, returnDocument: "after" }
+        { upsert: true, returnDocument: "after", session }
     );
 
     const updates: Record<string, unknown> = {};
@@ -125,12 +125,12 @@ export async function getOrCreateUserUsage(userId: string): Promise<IUserUsage> 
                 $or: conditions,
             },
             { $set: updates },
-            { returnDocument: "after" }
+            { returnDocument: "after", session }
         );
         if (updated) {
             return updated as IUserUsage;
         }
-        const fresh = await UserUsage.findOne({ userId });
+        const fresh = await UserUsage.findOne({ userId }, null, { session });
         if (fresh) return fresh as IUserUsage;
     }
 

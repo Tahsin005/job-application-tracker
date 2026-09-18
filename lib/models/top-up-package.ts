@@ -5,7 +5,7 @@ export interface ITopUpPackage extends Document {
     tierKey: string;
     order: number;
     price: number;
-    currency: string;
+    currency: "BDT";
     description: string;
     badgeText?: string;
     credits: {
@@ -45,6 +45,7 @@ const TopUpPackageSchema = new Schema<ITopUpPackage>(
         },
         currency: {
             type: String,
+            enum: ["BDT"],
             default: "BDT",
             trim: true,
         },

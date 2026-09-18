@@ -192,7 +192,7 @@ export interface TopUpPackage {
     tierKey: string;
     order: number;
     price: number;
-    currency: string;
+    currency: "BDT";
     description: string;
     badgeText?: string;
     credits: PackageCredits;

@@ -25,7 +25,7 @@ const MfsProviderSchema = new Schema<IMfsProvider>(
             required: true,
             trim: true,
             lowercase: true,
-            index: true,
+            unique: true,
         },
         accountType: {
             type: String,

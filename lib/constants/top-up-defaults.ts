@@ -58,7 +58,7 @@ export const DEFAULT_MFS_PROVIDERS = [
         instructions: "Send Money using bKash Personal account.",
         order: 1,
         color: "#E2136E",
-        isActive: true,
+        isActive: false,
     },
     {
         name: "Nagad",
@@ -68,7 +68,7 @@ export const DEFAULT_MFS_PROVIDERS = [
         instructions: "Send Money using Nagad Personal account.",
         order: 2,
         color: "#F7941D",
-        isActive: true,
+        isActive: false,
     },
     {
         name: "Rocket",
@@ -78,7 +78,7 @@ export const DEFAULT_MFS_PROVIDERS = [
         instructions: "Send Money using Rocket Personal account.",
         order: 3,
         color: "#8C3494",
-        isActive: true,
+        isActive: false,
     },
 ];
 

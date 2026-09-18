@@ -1,5 +1,6 @@
 "use server";
 
+import mongoose from "mongoose";
 import { getSession } from "../auth/auth";
 import connectDB from "../db";
 import { TopUpPackage, TopUpRequest, AdminSettings, MfsProvider } from "../models";
@@ -77,6 +78,10 @@ export async function submitTopUpRequestAction(rawInput: CreateTopUpRequestInput
         await connectDB();
 
         const { packageId, paymentMethod, senderNumber, transactionId, userNote } = parsed.data;
+
+        if (!mongoose.Types.ObjectId.isValid(packageId)) {
+            return { error: "Selected package is not available", data: null };
+        }
 
         const pkg = await TopUpPackage.findById(packageId);
         if (!pkg || !pkg.isActive) {
@@ -156,7 +161,7 @@ export async function submitTopUpRequestAction(rawInput: CreateTopUpRequestInput
 
         console.error("Failed to submit top-up request:", err);
         return {
-            error: err instanceof Error ? err.message : "Failed to submit top-up request",
+            error: "Failed to submit top-up request. Please try again later.",
             data: null,
         };
     }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getAdminUserDetailsAction } from "@/lib/actions/admin";
 import { getUserTopUpHistoryForAdminAction } from "@/lib/actions/admin-top-up";
-import { ArrowLeft, Briefcase, FileText, Calendar, ShieldCheck, BarChart3, DollarSign, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Briefcase, FileText, Calendar, ShieldCheck, BarChart3, DollarSign, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,8 +51,9 @@ async function UserDetailContent({ params }: UserDetailPageProps) {
     }
 
     const { user, usage, stats } = res.data;
-    const topUpHistory = topUpRes.data?.requests || [];
-    const totalSpend = topUpRes.data?.totalSpend || 0;
+    const hasTopUpError = Boolean(topUpRes.error);
+    const topUpHistory = hasTopUpError ? [] : (topUpRes.data?.requests || []);
+    const totalSpend = hasTopUpError ? 0 : (topUpRes.data?.totalSpend || 0);
 
     return (
         <div className="space-y-6">
@@ -218,12 +219,24 @@ async function UserDetailContent({ params }: UserDetailPageProps) {
                             Historical MFS payment submissions and quota boosts for this candidate.
                         </CardDescription>
                     </div>
-                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-xs px-3 py-1">
-                        Lifetime Spend: ৳ {totalSpend.toLocaleString()} BDT
+                    <Badge
+                        variant="outline"
+                        className={
+                            hasTopUpError
+                                ? "bg-red-50 text-red-700 border-red-200 font-semibold text-xs px-3 py-1"
+                                : "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-xs px-3 py-1"
+                        }
+                    >
+                        {hasTopUpError ? "Error Loading Spend" : `Lifetime Spend: ৳ ${totalSpend.toLocaleString()} BDT`}
                     </Badge>
                 </CardHeader>
                 <CardContent className="pt-0">
-                    {topUpHistory.length === 0 ? (
+                    {hasTopUpError ? (
+                        <div className="p-3.5 rounded-xl border border-destructive/20 bg-destructive/5 text-destructive text-xs flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            <span>Failed to load top-up payment history: {topUpRes.error}</span>
+                        </div>
+                    ) : topUpHistory.length === 0 ? (
                         <p className="text-xs text-slate-400 italic py-3 text-center border border-dashed rounded-lg">
                             This candidate has not purchased any top-up packs yet.
                         </p>

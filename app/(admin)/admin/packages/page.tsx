@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAdminTopUpFacade } from "@/lib/facades/useTopUpFacade";
+import { useAdminCatalogFacade } from "@/lib/facades/useTopUpFacade";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,7 @@ export default function AdminPackagesPage() {
         isTogglingMfsProvider,
         deleteMfsProvider,
         isDeletingMfsProvider,
-    } = useAdminTopUpFacade();
+    } = useAdminCatalogFacade();
 
     // Package Form
     const {
@@ -169,7 +169,7 @@ export default function AdminPackagesPage() {
         setPkgValue("tierKey", pkg.tierKey);
         setPkgValue("order", pkg.order || 1);
         setPkgValue("price", pkg.price);
-        setPkgValue("currency", pkg.currency || "BDT");
+        setPkgValue("currency", "BDT");
         setPkgValue("description", pkg.description || "");
         setPkgValue("badgeText", pkg.badgeText || "");
         setPkgValue("credits.atsScan", pkg.credits.atsScan);
