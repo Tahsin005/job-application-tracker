@@ -7,7 +7,11 @@ import {
     createJobApplication,
     updateJobApplication,
     deleteJobApplication,
+    addInterviewRound,
+    updateInterviewRound,
+    deleteInterviewRound,
 } from "../actions/job-applications";
+import { InterviewRoundInput } from "../validations/job-application";
 
 export const boardKeys = {
     all: ["boards"] as const,
@@ -188,6 +192,71 @@ export function useMoveJobMutation() {
             }
         },
         onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: boardKeys.all });
+        },
+    });
+}
+
+export function useAddInterviewMutation() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            jobApplicationId,
+            roundData,
+        }: {
+            jobApplicationId: string;
+            roundData: InterviewRoundInput;
+        }) => {
+            const res = await addInterviewRound(jobApplicationId, roundData);
+            if (res.error) throw new Error(res.error);
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: boardKeys.all });
+        },
+    });
+}
+
+export function useUpdateInterviewMutation() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            jobApplicationId,
+            roundId,
+            updates,
+        }: {
+            jobApplicationId: string;
+            roundId: string;
+            updates: Partial<InterviewRoundInput>;
+        }) => {
+            const res = await updateInterviewRound(jobApplicationId, roundId, updates);
+            if (res.error) throw new Error(res.error);
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: boardKeys.all });
+        },
+    });
+}
+
+export function useDeleteInterviewMutation() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            jobApplicationId,
+            roundId,
+        }: {
+            jobApplicationId: string;
+            roundId: string;
+        }) => {
+            const res = await deleteInterviewRound(jobApplicationId, roundId);
+            if (res.error) throw new Error(res.error);
+            return res.data;
+        },
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: boardKeys.all });
         },
     });

@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Column, JobApplication } from "@/lib/models/models.types";
 import { Card, CardContent } from "./ui/card";
-import { Edit2, ExternalLink, MoreVertical, Trash2, Sparkles, FileText } from "lucide-react";
+import { Edit2, ExternalLink, MoreVertical, Trash2, Sparkles, FileText, Calendar } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -26,13 +26,14 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { RichTextEditor } from "./ui/rich-text-editor";
-import { stripHtmlTags, truncateText } from "@/lib/utils";
+import { cn, stripHtmlTags, truncateText } from "@/lib/utils";
 import { useBoardFacade } from "@/lib/facades/useBoardFacade";
 import {
     updateJobApplicationSchema,
     UpdateJobApplicationInput,
 } from "@/lib/validations/job-application";
 import { AtsAnalysisModal } from "./ai/ats-analysis-modal";
+import { InterviewsTab } from "./interviews/interviews-tab";
 
 interface JobApplicationCardProps {
     job: JobApplication;
@@ -48,8 +49,18 @@ export default function JobApplicationCard({
     isOverlay,
 }: JobApplicationCardProps) {
     const [isEditing, setIsEditing] = useState(false);
+    const [activeModalTab, setActiveModalTab] = useState<"details" | "interviews">("details");
     const [isAtsOpen, setIsAtsOpen] = useState(false);
     const { updateJob, deleteJob, moveJob } = useBoardFacade();
+
+    const now = new Date().getTime();
+    const upcomingInterview = job.interviews
+        ?.filter(
+            (i) => i.status === "scheduled" && new Date(i.scheduledAt).getTime() >= now - 60 * 60 * 1000
+        )
+        ?.sort(
+            (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+        )[0];
 
     const {
         register,
@@ -117,6 +128,10 @@ export default function JobApplicationCard({
             <Card
                 className="cursor-pointer transition-shadow hover:shadow-lg bg-white group shadow-sm"
                 {...dragHandleProps}
+                onClick={() => {
+                    setActiveModalTab("details");
+                    setIsEditing(true);
+                }}
             >
                 <CardContent className="p-4">
                     <div className="flex items-start justify-between gap-2">
@@ -126,6 +141,34 @@ export default function JobApplicationCard({
                                 {job.company}
                             </p>
 
+
+                            {upcomingInterview && (
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveModalTab("interviews");
+                                        setIsEditing(true);
+                                    }}
+                                    className="flex items-center gap-1.5 px-2.5 py-1 mb-2 rounded-lg bg-indigo-50/90 border border-indigo-200/80 text-indigo-900 hover:bg-indigo-100/90 transition-colors text-[11px] font-medium cursor-pointer shadow-2xs"
+                                    title="Upcoming Interview - Click to view schedule"
+                                >
+                                    <Calendar className="size-3.5 text-indigo-600 shrink-0" />
+                                    <span className="font-semibold text-indigo-950">
+                                        {upcomingInterview.roundType}:
+                                    </span>
+                                    <span className="truncate">
+                                        {new Date(upcomingInterview.scheduledAt).toLocaleDateString("en-US", {
+                                            month: "short",
+                                            day: "numeric",
+                                        })}{" "}
+                                        •{" "}
+                                        {new Date(upcomingInterview.scheduledAt).toLocaleTimeString("en-US", {
+                                            hour: "numeric",
+                                            minute: "2-digit",
+                                        })}
+                                    </span>
+                                </div>
+                            )}
 
                             <div className="flex items-center gap-1.5 flex-wrap mb-2">
                                 {job.atsAnalysis && (
@@ -161,6 +204,23 @@ export default function JobApplicationCard({
                                         <FileText className="size-3 text-indigo-500" />
                                         <span className="truncate max-w-[120px]">
                                             {job.attachedResumeName}
+                                        </span>
+                                    </Badge>
+                                )}
+                                {job.interviews && job.interviews.length > 0 && !upcomingInterview && (
+                                    <Badge
+                                        variant="outline"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveModalTab("interviews");
+                                            setIsEditing(true);
+                                        }}
+                                        className="cursor-pointer gap-1 text-[10px] py-0 px-1.5 text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100"
+                                        title="View Interview Rounds"
+                                    >
+                                        <Calendar className="size-3 text-indigo-500" />
+                                        <span>
+                                            {job.interviews.length} Round{job.interviews.length > 1 ? "s" : ""}
                                         </span>
                                     </Badge>
                                 )}
@@ -200,7 +260,7 @@ export default function JobApplicationCard({
                         </div>
 
                         {!isOverlay && (
-                            <div className="flex items-start gap-1">
+                            <div className="flex items-start gap-1" onClick={(e) => e.stopPropagation()}>
                                 <Button
                                     variant="ghost"
                                     size="icon-xs"
@@ -226,9 +286,24 @@ export default function JobApplicationCard({
                                             AI & ATS Match
                                         </DropdownMenuItem>
 
-                                        <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                setActiveModalTab("interviews");
+                                                setIsEditing(true);
+                                            }}
+                                        >
+                                            <Calendar className="mr-2 h-4 w-4 text-indigo-600" />
+                                            Interviews {job.interviews && job.interviews.length > 0 ? `(${job.interviews.length})` : ""}
+                                        </DropdownMenuItem>
+
+                                        <DropdownMenuItem
+                                            onClick={() => {
+                                                setActiveModalTab("details");
+                                                setIsEditing(true);
+                                            }}
+                                        >
                                             <Edit2 className="mr-2 h-4 w-4" />
-                                            Edit
+                                            Edit Details
                                         </DropdownMenuItem>
 
                                         {columns.length > 1 && (
@@ -269,118 +344,182 @@ export default function JobApplicationCard({
                         onOpenChange={setIsAtsOpen}
                     />
                     <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                        <DialogContent className="w-[92vw] sm:max-w-2xl">
-                            <DialogHeader>
-                                <DialogTitle>Edit Job Application</DialogTitle>
-                                <DialogDescription>Update details for this job application</DialogDescription>
-                            </DialogHeader>
-                            <form className="space-y-4" onSubmit={handleSubmit(onUpdateSubmit)}>
-                                <div className="space-y-4 max-h-[70vh] overflow-y-auto px-1 pr-2">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit-company">Company *</Label>
-                                            <Input
-                                                id="edit-company"
-                                                {...register("company")}
-                                            />
-                                            {errors.company && (
-                                                <p className="text-xs text-destructive">{errors.company.message}</p>
-                                            )}
+                        <DialogContent className="w-[94vw] sm:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+                            <DialogHeader className="p-6 pb-3 border-b border-slate-100 bg-slate-50/50">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <div className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-0.5">
+                                            {job.company}
                                         </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit-position">Position *</Label>
-                                            <Input
-                                                id="edit-position"
-                                                {...register("position")}
-                                            />
-                                            {errors.position && (
-                                                <p className="text-xs text-destructive">{errors.position.message}</p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit-location">Location</Label>
-                                            <Input
-                                                id="edit-location"
-                                                {...register("location")}
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="edit-salary">Salary</Label>
-                                            <Input
-                                                id="edit-salary"
-                                                placeholder="e.g., $100k - $150k"
-                                                {...register("salary")}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="edit-jobUrl">Job URL</Label>
-                                        <Input
-                                            id="edit-jobUrl"
-                                            type="url"
-                                            placeholder="https://..."
-                                            {...register("jobUrl")}
-                                        />
-                                        {errors.jobUrl && (
-                                            <p className="text-xs text-destructive">{errors.jobUrl.message}</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="edit-tags">Tags (comma-separated)</Label>
-                                        <Input
-                                            id="edit-tags"
-                                            placeholder="React, Tailwind, High Pay"
-                                            {...register("tags")}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <Label htmlFor="edit-description">Description</Label>
-                                            <span className="text-[11px] text-muted-foreground">Rich text / paste supported</span>
-                                        </div>
-                                        <Controller
-                                            name="description"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <RichTextEditor
-                                                    id="edit-description"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    placeholder="Paste the role details, responsibilities, or requirements..."
-                                                />
-                                            )}
-                                        />
-                                        {errors.description && (
-                                            <p className="text-xs text-destructive">{errors.description.message}</p>
-                                        )}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="edit-notes">Notes</Label>
-                                        <Textarea
-                                            id="edit-notes"
-                                            rows={4}
-                                            {...register("notes")}
-                                        />
+                                        <DialogTitle className="text-xl font-bold text-slate-900">
+                                            {job.position}
+                                        </DialogTitle>
+                                        <DialogDescription className="text-xs text-slate-500 mt-0.5">
+                                            Manage role information, interview stages, and status
+                                        </DialogDescription>
                                     </div>
                                 </div>
 
-                                <DialogFooter>
-                                    <Button
+
+                                <div className="flex items-center gap-1.5 mt-3 p-1 bg-slate-200/70 rounded-xl w-fit text-xs font-medium">
+                                    <button
                                         type="button"
-                                        variant="outline"
-                                        onClick={() => setIsEditing(false)}
+                                        onClick={() => setActiveModalTab("details")}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer",
+                                            activeModalTab === "details"
+                                                ? "bg-white text-slate-900 shadow-xs font-semibold"
+                                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                                        )}
                                     >
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit" disabled={isSubmitting}>
-                                        {isSubmitting ? "Saving..." : "Save Changes"}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
+                                        <FileText className="size-3.5" />
+                                        <span>Job Details</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveModalTab("interviews")}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer",
+                                            activeModalTab === "interviews"
+                                                ? "bg-white text-slate-900 shadow-xs font-semibold"
+                                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                                        )}
+                                    >
+                                        <Calendar className="size-3.5 text-indigo-600" />
+                                        <span>Interviews</span>
+                                        {job.interviews && job.interviews.length > 0 && (
+                                            <span className="size-4 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center justify-center">
+                                                {job.interviews.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
+                            </DialogHeader>
+
+                            {activeModalTab === "details" ? (
+                                <form className="flex flex-col flex-1 overflow-hidden" onSubmit={handleSubmit(onUpdateSubmit)}>
+                                    <div className="space-y-4 max-h-[65vh] overflow-y-auto p-6 pt-4 pr-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit-company">Company *</Label>
+                                                <Input
+                                                    id="edit-company"
+                                                    {...register("company")}
+                                                />
+                                                {errors.company && (
+                                                    <p className="text-xs text-destructive">{errors.company.message}</p>
+                                                )}
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit-position">Position *</Label>
+                                                <Input
+                                                    id="edit-position"
+                                                    {...register("position")}
+                                                />
+                                                {errors.position && (
+                                                    <p className="text-xs text-destructive">{errors.position.message}</p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit-location">Location</Label>
+                                                <Input
+                                                    id="edit-location"
+                                                    {...register("location")}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="edit-salary">Salary</Label>
+                                                <Input
+                                                    id="edit-salary"
+                                                    placeholder="e.g., $100k - $150k"
+                                                    {...register("salary")}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-jobUrl">Job URL</Label>
+                                            <Input
+                                                id="edit-jobUrl"
+                                                type="url"
+                                                placeholder="https://..."
+                                                {...register("jobUrl")}
+                                            />
+                                            {errors.jobUrl && (
+                                                <p className="text-xs text-destructive">{errors.jobUrl.message}</p>
+                                            )}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-tags">Tags (comma-separated)</Label>
+                                            <Input
+                                                id="edit-tags"
+                                                placeholder="React, Tailwind, High Pay"
+                                                {...register("tags")}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor="edit-description">Description</Label>
+                                                <span className="text-[11px] text-muted-foreground">Rich text / paste supported</span>
+                                            </div>
+                                            <Controller
+                                                name="description"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <RichTextEditor
+                                                        id="edit-description"
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        placeholder="Paste the role details, responsibilities, or requirements..."
+                                                    />
+                                                )}
+                                            />
+                                            {errors.description && (
+                                                <p className="text-xs text-destructive">{errors.description.message}</p>
+                                            )}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-notes">Notes</Label>
+                                            <Textarea
+                                                id="edit-notes"
+                                                rows={4}
+                                                {...register("notes")}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <DialogFooter className="p-4 border-t border-slate-100 bg-slate-50/50">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setIsEditing(false)}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button type="submit" disabled={isSubmitting}>
+                                            {isSubmitting ? "Saving..." : "Save Changes"}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            ) : (
+                                <div className="flex flex-col flex-1 overflow-hidden">
+                                    <div className="max-h-[65vh] overflow-y-auto p-6 pt-4">
+                                        <InterviewsTab job={job} />
+                                    </div>
+                                    <DialogFooter className="p-4 border-t border-slate-100 bg-slate-50/50">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setIsEditing(false)}
+                                        >
+                                            Close
+                                        </Button>
+                                    </DialogFooter>
+                                </div>
+                            )}
                         </DialogContent>
                     </Dialog>
                 </>

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getSession } from "../auth/auth";
 import connectDB from "../db";
 import { Board, Column, JobApplication } from "../models";
+import { InterviewRoundInput } from "../validations/job-application";
 
 interface JobApplicationData {
     company: string;
@@ -117,6 +118,7 @@ export async function updateJobApplication(
         order?: number;
         tags?: string[];
         description?: string;
+        interviews?: InterviewRoundInput[];
     }
 ) {
     const session = await getSession();
@@ -154,6 +156,7 @@ export async function updateJobApplication(
         order: number;
         tags: string[];
         description: string;
+        interviews: unknown[];
     }> = otherUpdates;
 
     const currentColumnId = jobApplication.columnId.toString();
@@ -336,6 +339,132 @@ export async function getUserBoard() {
     return {
         error: null,
         data: JSON.parse(JSON.stringify(boardDoc)),
+    };
+}
+
+export async function addInterviewRound(
+    jobApplicationId: string,
+    roundData: InterviewRoundInput
+) {
+    const session = await getSession();
+    if (!session?.user) {
+        return { error: "Unauthorized", data: null };
+    }
+
+    await connectDB();
+    const job = await JobApplication.findById(jobApplicationId);
+    if (!job) {
+        return { error: "Job application not found", data: null };
+    }
+
+    if (job.userId !== session.user.id) {
+        return { error: "Unauthorized", data: null };
+    }
+
+    if (!job.interviews) {
+        job.interviews = [];
+    }
+
+    job.interviews.push({
+        ...roundData,
+        scheduledAt: new Date(roundData.scheduledAt),
+    });
+
+    job.interviews.sort(
+        (a: { scheduledAt: Date }, b: { scheduledAt: Date }) =>
+            new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+    );
+
+    await job.save();
+    revalidatePath("/dashboard");
+
+    return {
+        error: null,
+        data: JSON.parse(JSON.stringify(job)),
+    };
+}
+
+export async function updateInterviewRound(
+    jobApplicationId: string,
+    roundId: string,
+    updates: Partial<InterviewRoundInput>
+) {
+    const session = await getSession();
+    if (!session?.user) {
+        return { error: "Unauthorized", data: null };
+    }
+
+    await connectDB();
+    const job = await JobApplication.findById(jobApplicationId);
+    if (!job) {
+        return { error: "Job application not found", data: null };
+    }
+
+    if (job.userId !== session.user.id) {
+        return { error: "Unauthorized", data: null };
+    }
+
+    const round = job.interviews?.id(roundId);
+    if (!round) {
+        return { error: "Interview round not found", data: null };
+    }
+
+    if (updates.roundType) round.roundType = updates.roundType;
+    if (updates.customRoundName !== undefined) round.customRoundName = updates.customRoundName;
+    if (updates.scheduledAt) round.scheduledAt = new Date(updates.scheduledAt);
+    if (updates.durationMinutes !== undefined) round.durationMinutes = updates.durationMinutes;
+    if (updates.interviewerNames !== undefined) round.interviewerNames = updates.interviewerNames;
+    if (updates.meetingUrl !== undefined) round.meetingUrl = updates.meetingUrl;
+    if (updates.location !== undefined) round.location = updates.location;
+    if (updates.notes !== undefined) round.notes = updates.notes;
+    if (updates.status) round.status = updates.status;
+    if (updates.feedback !== undefined) round.feedback = updates.feedback;
+
+    if (job.interviews) {
+        job.interviews.sort(
+            (a: { scheduledAt: Date }, b: { scheduledAt: Date }) =>
+                new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+        );
+    }
+
+    await job.save();
+    revalidatePath("/dashboard");
+
+    return {
+        error: null,
+        data: JSON.parse(JSON.stringify(job)),
+    };
+}
+
+export async function deleteInterviewRound(
+    jobApplicationId: string,
+    roundId: string
+) {
+    const session = await getSession();
+    if (!session?.user) {
+        return { error: "Unauthorized", data: null };
+    }
+
+    await connectDB();
+    const job = await JobApplication.findById(jobApplicationId);
+    if (!job) {
+        return { error: "Job application not found", data: null };
+    }
+
+    if (job.userId !== session.user.id) {
+        return { error: "Unauthorized", data: null };
+    }
+
+    if (job.interviews) {
+        job.interviews.pull({ _id: roundId });
+        await job.save();
+    }
+
+    revalidatePath("/dashboard");
+
+    return {
+        error: null,
+        data: JSON.parse(JSON.stringify(job)),
     };
 }
 

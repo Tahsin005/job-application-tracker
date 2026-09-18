@@ -8,6 +8,37 @@ export interface AtsAnalysis {
     resumeName?: string;
 }
 
+export type InterviewRoundType =
+    | "Screening"
+    | "Technical"
+    | "System Design"
+    | "Behavioral"
+    | "Final"
+    | "Other";
+
+export type InterviewStatus =
+    | "scheduled"
+    | "completed"
+    | "passed"
+    | "rejected"
+    | "cancelled";
+
+export interface InterviewRound {
+    _id?: string;
+    roundType: InterviewRoundType;
+    customRoundName?: string;
+    scheduledAt: string | Date;
+    durationMinutes?: number;
+    interviewerNames?: string;
+    meetingUrl?: string;
+    location?: string;
+    notes?: string;
+    status: InterviewStatus;
+    feedback?: string;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+}
+
 export interface JobApplication {
     _id: string;
     company: string;
@@ -27,6 +58,7 @@ export interface JobApplication {
     aiCoverLetter?: string;
     aiOutreachMessage?: string;
     aiApplicationEmail?: string;
+    interviews?: InterviewRound[];
     appliedDate?: string | Date;
     createdAt?: string | Date;
     updatedAt?: string | Date;

@@ -8,10 +8,17 @@ import {
     useUpdateJobMutation,
     useDeleteJobMutation,
     useMoveJobMutation,
+    useAddInterviewMutation,
+    useUpdateInterviewMutation,
+    useDeleteInterviewMutation,
 } from "../queries/board-queries";
 import { useBoardStore } from "../store/board-store";
 import { toast } from "sonner";
-import { CreateJobApplicationInput, UpdateJobApplicationInput } from "../validations/job-application";
+import {
+    CreateJobApplicationInput,
+    UpdateJobApplicationInput,
+    InterviewRoundInput,
+} from "../validations/job-application";
 import { computeBoardAnalytics } from "../utils/analytics";
 import { exportToCSV, exportToJSON } from "../utils/export-data";
 
@@ -28,6 +35,9 @@ export function useBoardFacade(initialBoard?: Board | null) {
     const updateMutation = useUpdateJobMutation();
     const deleteMutation = useDeleteJobMutation();
     const moveMutation = useMoveJobMutation();
+    const addInterviewMutation = useAddInterviewMutation();
+    const updateInterviewMutation = useUpdateInterviewMutation();
+    const deleteInterviewMutation = useDeleteInterviewMutation();
 
     const activeId = useBoardStore((s) => s.activeId);
     const setActiveId = useBoardStore((s) => s.setActiveId);
@@ -146,6 +156,59 @@ export function useBoardFacade(initialBoard?: Board | null) {
         }
     };
 
+    const addInterview = async (jobApplicationId: string, roundData: InterviewRoundInput) => {
+        try {
+            const result = await addInterviewMutation.mutateAsync({
+                jobApplicationId,
+                roundData,
+            });
+            toast.success("Interview round scheduled!");
+            return result;
+        } catch (err) {
+            toast.error("Failed to schedule interview round", {
+                description: err instanceof Error ? err.message : "An unexpected error occurred.",
+            });
+            throw err;
+        }
+    };
+
+    const updateInterview = async (
+        jobApplicationId: string,
+        roundId: string,
+        updates: Partial<InterviewRoundInput>
+    ) => {
+        try {
+            const result = await updateInterviewMutation.mutateAsync({
+                jobApplicationId,
+                roundId,
+                updates,
+            });
+            toast.success("Interview round updated!");
+            return result;
+        } catch (err) {
+            toast.error("Failed to update interview round", {
+                description: err instanceof Error ? err.message : "An unexpected error occurred.",
+            });
+            throw err;
+        }
+    };
+
+    const deleteInterview = async (jobApplicationId: string, roundId: string) => {
+        try {
+            const result = await deleteInterviewMutation.mutateAsync({
+                jobApplicationId,
+                roundId,
+            });
+            toast.success("Interview round removed");
+            return result;
+        } catch (err) {
+            toast.error("Failed to delete interview round", {
+                description: err instanceof Error ? err.message : "An unexpected error occurred.",
+            });
+            throw err;
+        }
+    };
+
     const analytics = useMemo(() => {
         return computeBoardAnalytics(board?.columns);
     }, [board?.columns]);
@@ -192,11 +255,17 @@ export function useBoardFacade(initialBoard?: Board | null) {
             createMutation.isPending ||
             updateMutation.isPending ||
             deleteMutation.isPending ||
-            moveMutation.isPending,
+            moveMutation.isPending ||
+            addInterviewMutation.isPending ||
+            updateInterviewMutation.isPending ||
+            deleteInterviewMutation.isPending,
         moveJob,
         createJob,
         updateJob,
         deleteJob,
+        addInterview,
+        updateInterview,
+        deleteInterview,
         refetchBoard: refetch,
         analytics,
         exportAsCSV,
