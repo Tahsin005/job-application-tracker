@@ -162,3 +162,93 @@ export interface AiPromptItem {
     [key: string]: unknown;
 }
 
+export type MfsPaymentMethod = string;
+export type TopUpStatus = "pending" | "approved" | "rejected";
+
+export interface MfsProvider {
+    _id: string;
+    name: string;
+    slug: string;
+    accountType: string;
+    accountNumber: string;
+    instructions: string;
+    order: number;
+    color?: string;
+    isActive: boolean;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+}
+
+export interface PackageCredits {
+    atsScan: number;
+    coverLetter: number;
+    outreach: number;
+    applicationEmail: number;
+}
+
+export interface TopUpPackage {
+    _id: string;
+    name: string;
+    tierKey: string;
+    order: number;
+    price: number;
+    currency: "BDT";
+    description: string;
+    badgeText?: string;
+    credits: PackageCredits;
+    isActive: boolean;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+}
+
+export interface TopUpRequest {
+    _id: string;
+    userId: string;
+    userName: string;
+    userEmail: string;
+    packageId: string;
+    packageName: string;
+    order: number;
+    amount: number;
+    currency: string;
+    paymentMethod: MfsPaymentMethod;
+    senderNumber: string;
+    transactionId: string;
+    status: TopUpStatus;
+    rejectionReason?: string;
+    creditsSnapshot: PackageCredits;
+    userNote?: string;
+    reviewedBy?: string;
+    reviewedAt?: string | Date;
+    createdAt?: string | Date;
+    updatedAt?: string | Date;
+}
+
+export interface AdminMfsSettings {
+    key: string;
+    bkashNumber: string;
+    nagadNumber: string;
+    rocketNumber: string;
+    upayNumber?: string;
+    instructions: string;
+    updatedAt?: string | Date;
+}
+
+export interface TopUpAnalyticsSummary {
+    totalRevenue: number;
+    pendingCount: number;
+    approvedCount: number;
+    rejectedCount: number;
+    totalRequests: number;
+    packageDistribution: {
+        packageName: string;
+        count: number;
+        revenue: number;
+    }[];
+    methodDistribution: {
+        method: MfsPaymentMethod;
+        count: number;
+        revenue: number;
+    }[];
+}
+

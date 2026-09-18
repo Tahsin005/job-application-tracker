@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth/auth";
 import connectDB from "@/lib/db";
 import Link from "next/link";
-import { Users, FileText, Briefcase, ShieldCheck, ArrowRight, Cpu } from "lucide-react";
+import { Users, FileText, Briefcase, ShieldCheck, ArrowRight, Cpu, DollarSign, Clock } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,11 +26,20 @@ async function AdminDashboardContent() {
     let userCount = 0;
     let jobCount = 0;
     let resumeCount = 0;
+    let pendingTopUps = 0;
+    let totalRevenue = 0;
 
     if (db) {
         userCount = await db.collection("user").countDocuments();
         jobCount = await db.collection("jobapplications").countDocuments();
         resumeCount = await db.collection("resumes").countDocuments();
+        pendingTopUps = await db.collection("topuprequests").countDocuments({ status: "pending" });
+
+        const revResult = await db.collection("topuprequests").aggregate([
+            { $match: { status: "approved" } },
+            { $group: { _id: null, total: { $sum: "$amount" } } },
+        ]).toArray();
+        totalRevenue = revResult[0]?.total || 0;
     }
 
     const activeAi = await AiProviderFactory.getActiveConfig();
@@ -43,10 +52,16 @@ async function AdminDashboardContent() {
                         Admin Overview
                     </h1>
                     <p className="text-sm text-slate-500 mt-1">
-                        System telemetry, user role supervision, and application management.
+                        System telemetry, top-up revenue, candidate supervision, and platform management.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <Link href="/admin/top-ups">
+                        <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+                            <Clock className="h-3.5 w-3.5 text-amber-600" />
+                            Top-Up Requests ({pendingTopUps})
+                        </Button>
+                    </Link>
                     <Link href="/admin/users">
                         <Button size="sm" className="bg-primary hover:bg-primary/90 text-white gap-1.5 text-xs">
                             <Users className="h-3.5 w-3.5" />
@@ -55,7 +70,6 @@ async function AdminDashboardContent() {
                     </Link>
                 </div>
             </div>
-
 
             <Card className="border-slate-200 bg-white shadow-xs">
                 <CardHeader className="pb-3">
@@ -90,8 +104,50 @@ async function AdminDashboardContent() {
                 </CardContent>
             </Card>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Link href="/admin/top-ups" className="block group">
+                    <Card className="border-slate-200 bg-white shadow-xs group-hover:border-emerald-500/50 group-hover:shadow-sm transition-all h-full">
+                        <CardContent className="p-6 flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-semibold text-slate-500 tracking-wider group-hover:text-emerald-600 transition-colors">
+                                    Top-Up Revenue
+                                </p>
+                                <h3 className="text-3xl font-bold text-slate-900 mt-2">
+                                    ৳ {totalRevenue.toLocaleString()}
+                                </h3>
+                                <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                                    View Top-Ups <ArrowRight className="h-3 w-3" />
+                                </p>
+                            </div>
+                            <div className="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                                <DollarSign className="h-6 w-6" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+
+                <Link href="/admin/top-ups" className="block group">
+                    <Card className={`border-slate-200 bg-white shadow-xs group-hover:border-amber-500/50 group-hover:shadow-sm transition-all h-full ${pendingTopUps > 0 ? "border-amber-300 ring-1 ring-amber-200" : ""}`}>
+                        <CardContent className="p-6 flex items-center justify-between">
+                            <div>
+                                <p className="text-xs font-semibold text-slate-500 tracking-wider group-hover:text-amber-600 transition-colors">
+                                    Pending Top-Up Verifications
+                                </p>
+                                <h3 className="text-3xl font-bold text-slate-900 mt-2">{pendingTopUps}</h3>
+                                <p className="text-xs text-amber-600 font-medium mt-1 flex items-center gap-1">
+                                    Review Queue <ArrowRight className="h-3 w-3" />
+                                </p>
+                            </div>
+                            <div className={`h-12 w-12 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform ${pendingTopUps > 0 ? "bg-amber-100 text-amber-700 animate-pulse" : "bg-amber-50 text-amber-600"}`}>
+                                <Clock className="h-6 w-6" />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+
                 <Link href="/admin/users" className="block group">
                     <Card className="border-slate-200 bg-white shadow-xs group-hover:border-primary/50 group-hover:shadow-sm transition-all h-full">
                         <CardContent className="p-6 flex items-center justify-between">
@@ -111,11 +167,13 @@ async function AdminDashboardContent() {
                     </Card>
                 </Link>
 
+
                 <Card className="border-slate-200 bg-white shadow-xs">
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-semibold text-slate-500 tracking-wider">Job Applications</p>
                             <h3 className="text-3xl font-bold text-slate-900 mt-2">{jobCount}</h3>
+                            <p className="text-xs text-slate-400 mt-1">Platform-wide applications</p>
                         </div>
                         <div className="h-12 w-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                             <Briefcase className="h-6 w-6" />
@@ -123,17 +181,20 @@ async function AdminDashboardContent() {
                     </CardContent>
                 </Card>
 
+
                 <Card className="border-slate-200 bg-white shadow-xs">
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-semibold text-slate-500 tracking-wider">Resumes Stored</p>
                             <h3 className="text-3xl font-bold text-slate-900 mt-2">{resumeCount}</h3>
+                            <p className="text-xs text-slate-400 mt-1">Candidate uploaded resumes</p>
                         </div>
                         <div className="h-12 w-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
                             <FileText className="h-6 w-6" />
                         </div>
                     </CardContent>
                 </Card>
+
 
                 <Link href="/admin/ai" className="block group">
                     <Card className="border-slate-200 bg-white shadow-xs group-hover:border-primary/50 group-hover:shadow-sm transition-all h-full">

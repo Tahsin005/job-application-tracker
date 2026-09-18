@@ -21,10 +21,10 @@ export default function RootLayout({
 }>) {
   return (
       <html lang="en" className={outfit.variable}>
-        <body className="font-sans antialiased flex flex-col min-h-screen">
+        <body className="font-sans antialiased flex flex-col min-h-screen overflow-x-clip">
           <QueryProvider>
             <Navbar />
-            <main className="flex-1">
+            <main className="flex-1 min-w-0">
               {children}
             </main>
             <Footer />

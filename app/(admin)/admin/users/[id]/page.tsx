@@ -2,12 +2,14 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getAdminUserDetailsAction } from "@/lib/actions/admin";
-import { ArrowLeft, Briefcase, FileText, Calendar, ShieldCheck, BarChart3 } from "lucide-react";
+import { getUserTopUpHistoryForAdminAction } from "@/lib/actions/admin-top-up";
+import { ArrowLeft, Briefcase, FileText, Calendar, ShieldCheck, BarChart3, DollarSign, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import QuotaEditorCard from "@/components/admin/quota-editor-card";
+import { TopUpRequest } from "@/lib/models/models.types";
 
 interface RecentApplication {
     id: string;
@@ -33,7 +35,10 @@ interface UserDetailPageProps {
 
 async function UserDetailContent({ params }: UserDetailPageProps) {
     const { id } = await params;
-    const res = await getAdminUserDetailsAction(id);
+    const [res, topUpRes] = await Promise.all([
+        getAdminUserDetailsAction(id),
+        getUserTopUpHistoryForAdminAction(id),
+    ]);
 
     if (res.error || !res.data) {
         if (res.error?.toLowerCase().includes("unauthorized")) {
@@ -46,6 +51,9 @@ async function UserDetailContent({ params }: UserDetailPageProps) {
     }
 
     const { user, usage, stats } = res.data;
+    const hasTopUpError = Boolean(topUpRes.error);
+    const topUpHistory = hasTopUpError ? [] : (topUpRes.data?.requests || []);
+    const totalSpend = hasTopUpError ? 0 : (topUpRes.data?.totalSpend || 0);
 
     return (
         <div className="space-y-6">
@@ -197,6 +205,107 @@ async function UserDetailContent({ params }: UserDetailPageProps) {
                 initialUsage={usage}
             />
 
+
+            <Card className="border-slate-200 bg-white shadow-xs">
+                <CardHeader className="pb-3 flex flex-row items-center justify-between">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 text-emerald-600" />
+                            <CardTitle className="text-base font-semibold text-slate-900">
+                                Top-Up Payments & Lifetime Spend
+                            </CardTitle>
+                        </div>
+                        <CardDescription className="text-xs mt-0.5">
+                            Historical MFS payment submissions and quota boosts for this candidate.
+                        </CardDescription>
+                    </div>
+                    <Badge
+                        variant="outline"
+                        className={
+                            hasTopUpError
+                                ? "bg-red-50 text-red-700 border-red-200 font-semibold text-xs px-3 py-1"
+                                : "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-xs px-3 py-1"
+                        }
+                    >
+                        {hasTopUpError ? "Error Loading Spend" : `Lifetime Spend: ৳ ${totalSpend.toLocaleString()} BDT`}
+                    </Badge>
+                </CardHeader>
+                <CardContent className="pt-0">
+                    {hasTopUpError ? (
+                        <div className="p-3.5 rounded-xl border border-destructive/20 bg-destructive/5 text-destructive text-xs flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 shrink-0" />
+                            <span>Failed to load top-up payment history: {topUpRes.error}</span>
+                        </div>
+                    ) : topUpHistory.length === 0 ? (
+                        <p className="text-xs text-slate-400 italic py-3 text-center border border-dashed rounded-lg">
+                            This candidate has not purchased any top-up packs yet.
+                        </p>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs text-slate-600">
+                                <thead className="bg-slate-50 text-[11px] font-semibold text-slate-500 border-b border-slate-100">
+                                    <tr>
+                                        <th className="py-2.5 px-3">Pack & Hierarchy</th>
+                                        <th className="py-2.5 px-3">Amount</th>
+                                        <th className="py-2.5 px-3">Method & Sender</th>
+                                        <th className="py-2.5 px-3">Transaction ID</th>
+                                        <th className="py-2.5 px-3">Status</th>
+                                        <th className="py-2.5 px-3 text-right">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {topUpHistory.map((th: TopUpRequest) => {
+                                        const isApproved = th.status === "approved";
+                                        const isRejected = th.status === "rejected";
+                                        const isPending = th.status === "pending";
+
+                                        return (
+                                            <tr key={th._id} className="hover:bg-slate-50/50">
+                                                <td className="py-3 px-3">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="font-semibold text-slate-800">{th.packageName}</span>
+                                                        <Badge variant="outline" className="text-[10px] px-1 py-0 bg-slate-50">
+                                                            Lvl {th.order || 1}
+                                                        </Badge>
+                                                    </div>
+                                                </td>
+                                                <td className="py-3 px-3 font-bold text-slate-900">
+                                                    ৳ {th.amount} {th.currency}
+                                                </td>
+                                                <td className="py-3 px-3">
+                                                    <span className="capitalize font-medium text-slate-800">{th.paymentMethod}</span>
+                                                    <span className="text-[11px] text-slate-400 block font-mono">{th.senderNumber}</span>
+                                                </td>
+                                                <td className="py-3 px-3 font-mono font-bold text-slate-900">
+                                                    {th.transactionId}
+                                                </td>
+                                                <td className="py-3 px-3">
+                                                    <Badge
+                                                        className={`text-[10px] font-semibold border ${isApproved
+                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                                                : isRejected
+                                                                    ? "bg-rose-50 text-rose-700 border-rose-200"
+                                                                    : "bg-amber-50 text-amber-700 border-amber-200"
+                                                            }`}
+                                                    >
+                                                        {isApproved && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                                                        {isRejected && <XCircle className="h-3 w-3 mr-1" />}
+                                                        {isPending && <Clock className="h-3 w-3 mr-1" />}
+                                                        {th.status.toUpperCase()}
+                                                    </Badge>
+                                                </td>
+                                                <td className="py-3 px-3 text-right text-slate-500 whitespace-nowrap">
+                                                    {th.createdAt ? new Date(th.createdAt).toLocaleDateString() : "N/A"}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 

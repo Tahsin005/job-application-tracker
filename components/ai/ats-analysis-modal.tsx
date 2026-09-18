@@ -13,6 +13,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { stripHtmlTags } from "@/lib/utils";
 import { useAiResumeFacade } from "@/lib/facades/useAiResumeFacade";
+import { TopUpModal } from "../top-up/top-up-modal";
 import {
     Sparkles,
     FileText,
@@ -27,7 +28,43 @@ import {
     TrendingUp,
     ListCheck,
     RotateCcw,
+    Zap,
 } from "lucide-react";
+
+function CreditRefillCallout({
+    featureName,
+    onTopUp,
+}: {
+    featureName: string;
+    onTopUp: () => void;
+}) {
+    return (
+        <div className="p-3.5 rounded-xl bg-linear-to-r from-amber-50 via-orange-50/50 to-amber-50/70 border border-amber-200/90 flex items-center justify-between gap-3 text-left shadow-2xs">
+            <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-100 text-amber-800 shrink-0">
+                    <Sparkles className="size-4" />
+                </div>
+                <div>
+                    <p className="text-xs font-bold text-amber-950">
+                        Out of {featureName} credits?
+                    </p>
+                    <p className="text-[11px] text-amber-800/90">
+                        Top up credit packs to continue scanning, writing letters, and generating messages.
+                    </p>
+                </div>
+            </div>
+            <Button
+                size="sm"
+                type="button"
+                onClick={onTopUp}
+                className="bg-linear-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs h-8 px-3 gap-1.5 shrink-0 shadow-xs cursor-pointer hover:scale-[1.02] active:scale-95 transition-all"
+            >
+                <Zap className="size-3.5 fill-white" />
+                Top Up
+            </Button>
+        </div>
+    );
+}
 
 interface AtsAnalysisModalProps {
     job: JobApplication;
@@ -39,6 +76,7 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
     const [activeTab, setActiveTab] = useState<
         "ats" | "cover-letter" | "outreach" | "application-email" | "resume"
     >("ats");
+    const [isTopUpOpen, setIsTopUpOpen] = useState(false);
     const [copiedCoverLetter, setCopiedCoverLetter] = useState(false);
     const [copiedOutreach, setCopiedOutreach] = useState(false);
     const [copiedEmail, setCopiedEmail] = useState(false);
@@ -186,7 +224,8 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                 : "text-rose-500 stroke-rose-500";
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <>
+            <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="w-[94vw] sm:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="p-6 pb-4 border-b border-slate-100 bg-slate-50/50">
                     <div className="flex items-start justify-between gap-4">
@@ -209,6 +248,19 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                             <DialogDescription className="text-xs text-slate-500 mt-0.5">
                                 AI Intelligence Hub • Powered by AgentRouter AI
                             </DialogDescription>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 pt-1">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                type="button"
+                                onClick={() => setIsTopUpOpen(true)}
+                                className="gap-1.5 border-amber-300 bg-linear-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-amber-950 font-semibold shadow-2xs text-xs rounded-full px-3 py-1 cursor-pointer transition-all"
+                            >
+                                <Sparkles className="size-3.5 text-amber-500 fill-amber-400" />
+                                <span>Top Up Credits</span>
+                            </Button>
                         </div>
                     </div>
 
@@ -351,10 +403,22 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                                             {atsRemaining} left
                                         </Badge>
                                     </Button>
-                                    {atsRemaining <= 0 && (
-                                        <p className="text-xs text-rose-500 mt-2">
-                                            Limit of 3 tries reached for ATS Matcher.
-                                        </p>
+                                    {atsRemaining <= 0 ? (
+                                        <div className="mt-4 max-w-md mx-auto">
+                                            <CreditRefillCallout
+                                                featureName="ATS Matcher"
+                                                onTopUp={() => setIsTopUpOpen(true)}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsTopUpOpen(true)}
+                                            className="text-[11px] text-slate-500 hover:text-amber-700 mt-2 flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                                        >
+                                            <span>Running low? Top up packs anytime</span>
+                                            <span className="text-amber-600 font-semibold">→</span>
+                                        </button>
                                     )}
                                 </div>
                             ) : (
@@ -418,21 +482,42 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                                             </div>
                                         </div>
 
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleRunAts}
-                                            disabled={isAnalyzingAts || atsRemaining <= 0}
-                                            className="gap-1.5 text-xs text-slate-700"
-                                        >
-                                            {isAnalyzingAts ? (
-                                                <Loader2 className="size-3.5 animate-spin" />
-                                            ) : (
-                                                <RotateCcw className="size-3.5" />
+                                        <div className="flex items-center gap-2">
+                                            {atsRemaining <= 0 && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    type="button"
+                                                    onClick={() => setIsTopUpOpen(true)}
+                                                    className="gap-1.5 border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 font-semibold text-xs rounded-full px-3 cursor-pointer"
+                                                >
+                                                    <Sparkles className="size-3.5 text-amber-500 fill-amber-400" />
+                                                    Top Up
+                                                </Button>
                                             )}
-                                            Re-run Scan ({atsRemaining} tries left)
-                                        </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleRunAts}
+                                                disabled={isAnalyzingAts || atsRemaining <= 0}
+                                                className="gap-1.5 text-xs text-slate-700"
+                                            >
+                                                {isAnalyzingAts ? (
+                                                    <Loader2 className="size-3.5 animate-spin" />
+                                                ) : (
+                                                    <RotateCcw className="size-3.5" />
+                                                )}
+                                                Re-run Scan ({atsRemaining} tries left)
+                                            </Button>
+                                        </div>
                                     </div>
+
+                                    {atsRemaining <= 0 && (
+                                        <CreditRefillCallout
+                                            featureName="ATS Matcher"
+                                            onTopUp={() => setIsTopUpOpen(true)}
+                                        />
+                                    )}
 
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -532,23 +617,55 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                                         Personalized for {job.company} based on your resume achievements and the job description.
                                     </p>
                                 </div>
-                                <Button
-                                    onClick={handleGenerateCoverLetter}
-                                    disabled={isGeneratingCoverLetter || coverLetterRemaining <= 0 || !selectedResumeId}
-                                    size="sm"
-                                    className="gap-1.5 bg-indigo-600 text-white"
-                                >
-                                    {isGeneratingCoverLetter ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
-                                    ) : (
-                                        <Sparkles className="size-3.5" />
+                                <div className="flex items-center gap-2">
+                                    {coverLetterRemaining <= 0 && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            type="button"
+                                            onClick={() => setIsTopUpOpen(true)}
+                                            className="gap-1.5 border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 font-semibold text-xs rounded-full px-3 cursor-pointer"
+                                        >
+                                            <Sparkles className="size-3.5 text-amber-500 fill-amber-400" />
+                                            Top Up
+                                        </Button>
                                     )}
-                                    {currentCoverLetter ? "Regenerate" : "Generate Cover Letter"}
-                                    <Badge variant="secondary" className="text-[10px] bg-indigo-500 text-white ml-1">
-                                        {coverLetterRemaining} left
-                                    </Badge>
-                                </Button>
+                                    <Button
+                                        onClick={handleGenerateCoverLetter}
+                                        disabled={isGeneratingCoverLetter || coverLetterRemaining <= 0 || !selectedResumeId}
+                                        size="sm"
+                                        className="gap-1.5 bg-indigo-600 text-white"
+                                    >
+                                        {isGeneratingCoverLetter ? (
+                                            <Loader2 className="size-3.5 animate-spin" />
+                                        ) : (
+                                            <Sparkles className="size-3.5" />
+                                        )}
+                                        {currentCoverLetter ? "Regenerate" : "Generate Cover Letter"}
+                                        <Badge variant="secondary" className="text-[10px] bg-indigo-500 text-white ml-1">
+                                            {coverLetterRemaining} left
+                                        </Badge>
+                                    </Button>
+                                </div>
                             </div>
+
+                            {coverLetterRemaining <= 0 ? (
+                                <CreditRefillCallout
+                                    featureName="Cover Letter"
+                                    onTopUp={() => setIsTopUpOpen(true)}
+                                />
+                            ) : (
+                                <div className="flex justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsTopUpOpen(true)}
+                                        className="text-[11px] text-slate-500 hover:text-amber-700 flex items-center gap-1 transition-colors cursor-pointer"
+                                    >
+                                        <span>Need more cover letters? Top up anytime</span>
+                                        <span className="text-amber-600 font-semibold">→</span>
+                                    </button>
+                                </div>
+                            )}
 
                             {currentCoverLetter ? (
                                 <div className="space-y-3">
@@ -599,23 +716,55 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                                         Concise, high-impact message to message the hiring team at {job.company}.
                                     </p>
                                 </div>
-                                <Button
-                                    onClick={handleGenerateOutreach}
-                                    disabled={isGeneratingOutreach || outreachRemaining <= 0 || !selectedResumeId}
-                                    size="sm"
-                                    className="gap-1.5 bg-indigo-600 text-white"
-                                >
-                                    {isGeneratingOutreach ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
-                                    ) : (
-                                        <Send className="size-3.5" />
+                                <div className="flex items-center gap-2">
+                                    {outreachRemaining <= 0 && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            type="button"
+                                            onClick={() => setIsTopUpOpen(true)}
+                                            className="gap-1.5 border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 font-semibold text-xs rounded-full px-3 cursor-pointer"
+                                        >
+                                            <Sparkles className="size-3.5 text-amber-500 fill-amber-400" />
+                                            Top Up
+                                        </Button>
                                     )}
-                                    {currentOutreach ? "Regenerate" : "Generate Outreach"}
-                                    <Badge variant="secondary" className="text-[10px] bg-indigo-500 text-white ml-1">
-                                        {outreachRemaining} left
-                                    </Badge>
-                                </Button>
+                                    <Button
+                                        onClick={handleGenerateOutreach}
+                                        disabled={isGeneratingOutreach || outreachRemaining <= 0 || !selectedResumeId}
+                                        size="sm"
+                                        className="gap-1.5 bg-indigo-600 text-white"
+                                    >
+                                        {isGeneratingOutreach ? (
+                                            <Loader2 className="size-3.5 animate-spin" />
+                                        ) : (
+                                            <Send className="size-3.5" />
+                                        )}
+                                        {currentOutreach ? "Regenerate" : "Generate Outreach"}
+                                        <Badge variant="secondary" className="text-[10px] bg-indigo-500 text-white ml-1">
+                                            {outreachRemaining} left
+                                        </Badge>
+                                    </Button>
+                                </div>
                             </div>
+
+                            {outreachRemaining <= 0 ? (
+                                <CreditRefillCallout
+                                    featureName="Cold Outreach"
+                                    onTopUp={() => setIsTopUpOpen(true)}
+                                />
+                            ) : (
+                                <div className="flex justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsTopUpOpen(true)}
+                                        className="text-[11px] text-slate-500 hover:text-amber-700 flex items-center gap-1 transition-colors cursor-pointer"
+                                    >
+                                        <span>Need more outreach messages? Top up anytime</span>
+                                        <span className="text-amber-600 font-semibold">→</span>
+                                    </button>
+                                </div>
+                            )}
 
                             {currentOutreach ? (
                                 <div className="space-y-3">
@@ -666,23 +815,44 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                                         Custom-crafted submission email with subject line tailored to the job description and your resume achievements.
                                     </p>
                                 </div>
-                                <Button
-                                    onClick={handleGenerateApplicationEmail}
-                                    disabled={!canGenerateApplicationEmail}
-                                    size="sm"
-                                    className="gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
-                                >
-                                    {isGeneratingApplicationEmail ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
-                                    ) : (
-                                        <Mail className="size-3.5" />
+                                <div className="flex items-center gap-2">
+                                    {applicationEmailRemaining <= 0 && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            type="button"
+                                            onClick={() => setIsTopUpOpen(true)}
+                                            className="gap-1.5 border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 font-semibold text-xs rounded-full px-3 cursor-pointer"
+                                        >
+                                            <Sparkles className="size-3.5 text-amber-500 fill-amber-400" />
+                                            Top Up
+                                        </Button>
                                     )}
-                                    {currentEmail ? "Regenerate Email" : "Generate Application Email"}
-                                    <Badge variant="secondary" className="text-[10px] bg-indigo-500 text-white ml-1">
-                                        {applicationEmailRemaining} left
-                                    </Badge>
-                                </Button>
+                                    <Button
+                                        onClick={handleGenerateApplicationEmail}
+                                        disabled={!canGenerateApplicationEmail}
+                                        size="sm"
+                                        className="gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white"
+                                    >
+                                        {isGeneratingApplicationEmail ? (
+                                            <Loader2 className="size-3.5 animate-spin" />
+                                        ) : (
+                                            <Mail className="size-3.5" />
+                                        )}
+                                        {currentEmail ? "Regenerate Email" : "Generate Application Email"}
+                                        <Badge variant="secondary" className="text-[10px] bg-indigo-500 text-white ml-1">
+                                            {applicationEmailRemaining} left
+                                        </Badge>
+                                    </Button>
+                                </div>
                             </div>
+
+                            {applicationEmailRemaining <= 0 && (
+                                <CreditRefillCallout
+                                    featureName="Application Email"
+                                    onTopUp={() => setIsTopUpOpen(true)}
+                                />
+                            )}
 
 
                             {!hasDescription && (
@@ -832,5 +1002,8 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                 </div>
             </DialogContent>
         </Dialog>
+
+        <TopUpModal open={isTopUpOpen} onOpenChange={setIsTopUpOpen} />
+        </>
     );
 }
