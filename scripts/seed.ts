@@ -79,6 +79,28 @@ const SAMPLE_JOBS = [
         description: "Create responsive web designs and implement them",
         jobUrl: "https://example.com/jobs/8",
         salary: "$85k - $105k",
+        interviews: [
+            {
+                roundType: "Screening",
+                scheduledAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+                durationMinutes: 30,
+                interviewerNames: "Lukas Weber (Talent Acquisition)",
+                status: "passed",
+                notes: "Discussed portfolio and past responsive web design projects.",
+                feedback: "Strong visual sense and frontend familiarity. Recommended for technical round.",
+            },
+            {
+                roundType: "Technical",
+                customRoundName: "Portfolio & UI Coding Session",
+                scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                durationMinutes: 60,
+                interviewerNames: "Elena Rostova (Lead UI Designer)",
+                meetingUrl: "https://meet.google.com/abc-defg-hij",
+                location: "Google Meet",
+                status: "scheduled",
+                notes: "Prepare Figma component library walkthrough and live styling demo.",
+            },
+        ],
     },
     {
         company: "WorkLab",
@@ -86,9 +108,39 @@ const SAMPLE_JOBS = [
         location: "Seattle, WA",
         tags: ["Product Strategy", "Agile", "Analytics"],
         description:
-        "Help drive the product and business planning for our platform",
+            "Help drive the product and business planning for our platform",
         jobUrl: "https://example.com/jobs/9",
         salary: "$140k - $170k",
+        interviews: [
+            {
+                roundType: "Screening",
+                scheduledAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+                durationMinutes: 30,
+                interviewerNames: "David Kim (Recruiting Partner)",
+                status: "passed",
+                notes: "Initial phone screen on product background.",
+            },
+            {
+                roundType: "Behavioral",
+                customRoundName: "Leadership & Cross-Functional Alignment",
+                scheduledAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+                durationMinutes: 45,
+                interviewerNames: "Rachel Green (Head of Product)",
+                status: "passed",
+                notes: "Covered conflict resolution and roadmap trade-offs.",
+            },
+            {
+                roundType: "System Design",
+                customRoundName: "Product Architecture & Analytics Deep Dive",
+                scheduledAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+                durationMinutes: 60,
+                interviewerNames: "Marcus Vance (VP of Engineering)",
+                meetingUrl: "https://meet.google.com/xyz-uvwx-rst",
+                location: "Google Meet",
+                status: "scheduled",
+                notes: "Present feature metric funnel and product telemetry architecture.",
+            },
+        ],
     },
     {
         company: "I Networks",
@@ -98,6 +150,19 @@ const SAMPLE_JOBS = [
         description: "Build cross-platform mobile applications",
         jobUrl: "https://example.com/jobs/10",
         salary: "$115k - $145k",
+        interviews: [
+            {
+                roundType: "Technical",
+                customRoundName: "Mobile State Management & Dart Live Coding",
+                scheduledAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+                durationMinutes: 60,
+                interviewerNames: "Kenji Sato (Senior Staff Mobile Engineer)",
+                meetingUrl: "https://zoom.us/j/9876543210",
+                location: "Zoom",
+                status: "scheduled",
+                notes: "Review Bloc and Riverpod state management patterns and offline caching.",
+            },
+        ],
     },
     // Offer
     {
@@ -245,6 +310,7 @@ async function seed() {
                     userId: USER_ID,
                     status: columnName.toLowerCase().replace(" ", "-"),
                     order: i,
+                    interviews: (jobData as { interviews?: unknown[] }).interviews || [],
                 });
 
                 column.jobApplications.push(jobApplication._id);

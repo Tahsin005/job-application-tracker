@@ -6,8 +6,6 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 async function getBoard(userId: string) {
-    "use cache";
-
     await connectDB();
 
     const boardDoc = await Board.findOne({
