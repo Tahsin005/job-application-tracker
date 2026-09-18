@@ -22,6 +22,9 @@ import {
     Trash2,
     Loader2,
     FileCheck,
+    Pencil,
+    X,
+    AlertCircle,
 } from "lucide-react";
 
 interface ResumeLibraryDialogProps {
@@ -37,16 +40,48 @@ export function ResumeLibraryDialog({ open, onOpenChange }: ResumeLibraryDialogP
     const [fileSize, setFileSize] = useState(0);
     const [isDefault, setIsDefault] = useState(false);
     const [isParsingPdf, setIsParsingPdf] = useState(false);
+    const [editingResumeId, setEditingResumeId] = useState<string | null>(null);
+    const [editingName, setEditingName] = useState("");
 
     const {
         resumes,
         isLoadingResumes,
         isSavingResume,
+        isRenamingResume,
         createResume,
+        renameResume,
         setDefaultResume,
         deleteResume,
         extractPdfText,
     } = useAiResumeFacade();
+
+    const oldestResume =
+        resumes.length > 0
+            ? [...resumes].sort(
+                  (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+              )[0]
+            : null;
+
+    function handleStartRename(resume: (typeof resumes)[number]) {
+        setEditingResumeId(resume._id);
+        setEditingName(resume.name);
+    }
+
+    function handleCancelRename() {
+        setEditingResumeId(null);
+        setEditingName("");
+    }
+
+    async function handleSaveRename(resumeId: string) {
+        if (!editingName.trim()) return;
+        try {
+            await renameResume(resumeId, editingName.trim());
+            setEditingResumeId(null);
+            setEditingName("");
+        } catch {
+            // Toast handled by facade
+        }
+    }
 
     async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -121,7 +156,7 @@ export function ResumeLibraryDialog({ open, onOpenChange }: ResumeLibraryDialogP
                                     : "text-slate-600 hover:text-slate-900"
                                 }`}
                         >
-                            Saved Resumes ({resumes.length})
+                            Saved Resumes ({resumes.length}/3)
                         </button>
                         <button
                             type="button"
@@ -196,19 +231,75 @@ export function ResumeLibraryDialog({ open, onOpenChange }: ResumeLibraryDialogP
                                                     <FileCheck className="size-4" />
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <h4 className="text-sm font-semibold text-slate-900 truncate">
-                                                            {resume.name}
-                                                        </h4>
-                                                        {resume.isDefault && (
-                                                            <Badge
-                                                                variant="default"
-                                                                className="bg-indigo-600 text-[10px] py-0 px-1.5"
+                                                    {editingResumeId === resume._id ? (
+                                                        <div className="flex items-center gap-1.5 w-full max-w-sm mt-0.5">
+                                                            <Input
+                                                                value={editingName}
+                                                                onChange={(e) => setEditingName(e.target.value)}
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === "Enter") {
+                                                                        e.preventDefault();
+                                                                        handleSaveRename(resume._id);
+                                                                    } else if (e.key === "Escape") {
+                                                                        e.preventDefault();
+                                                                        handleCancelRename();
+                                                                    }
+                                                                }}
+                                                                disabled={isRenamingResume}
+                                                                autoFocus
+                                                                className="h-7 text-xs px-2 py-0 font-medium bg-white"
+                                                                placeholder="Resume name"
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                size="icon-xs"
+                                                                variant="ghost"
+                                                                disabled={isRenamingResume || !editingName.trim()}
+                                                                onClick={() => handleSaveRename(resume._id)}
+                                                                className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 shrink-0"
+                                                                title="Save Name"
                                                             >
-                                                                Primary Resume
-                                                            </Badge>
-                                                        )}
-                                                    </div>
+                                                                {isRenamingResume ? (
+                                                                    <Loader2 className="size-3.5 animate-spin" />
+                                                                ) : (
+                                                                    <Check className="size-3.5" />
+                                                                )}
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                size="icon-xs"
+                                                                variant="ghost"
+                                                                disabled={isRenamingResume}
+                                                                onClick={handleCancelRename}
+                                                                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 shrink-0"
+                                                                title="Cancel"
+                                                            >
+                                                                <X className="size-3.5" />
+                                                            </Button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <h4 className="text-sm font-semibold text-slate-900 truncate max-w-[280px]">
+                                                                {resume.name}
+                                                            </h4>
+                                                            {resume.isDefault && (
+                                                                <Badge
+                                                                    variant="default"
+                                                                    className="bg-indigo-600 text-[10px] py-0 px-1.5"
+                                                                >
+                                                                    Primary Resume
+                                                                </Badge>
+                                                            )}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleStartRename(resume)}
+                                                                className="text-slate-400 hover:text-indigo-600 transition-colors p-1 rounded hover:bg-slate-100"
+                                                                title="Rename Resume"
+                                                            >
+                                                                <Pencil className="size-3" />
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                     <p className="text-xs text-slate-500 mt-1 line-clamp-2">
                                                         {resume.textContent.slice(0, 140)}...
                                                     </p>
@@ -266,6 +357,18 @@ export function ResumeLibraryDialog({ open, onOpenChange }: ResumeLibraryDialogP
 
                     {activeTab === "upload" && (
                         <form onSubmit={handleSaveResume} className="space-y-4">
+                            {resumes.length >= 3 && oldestResume && (
+                                <div className="p-3 bg-amber-50/90 border border-amber-200/80 rounded-xl text-amber-800 text-xs flex items-start gap-2.5">
+                                    <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                                    <div className="leading-relaxed">
+                                        <span className="font-semibold">Maximum capacity reached (3/3).</span>
+                                        {" "}Saving a new resume will automatically delete your oldest saved version:{" "}
+                                        <span className="font-semibold underline decoration-amber-400 underline-offset-2">
+                                            &ldquo;{oldestResume.name}&rdquo;
+                                        </span>.
+                                    </div>
+                                </div>
+                            )}
                             <div className="border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-xl p-6 text-center transition-colors bg-slate-50/50">
                                 <input
                                     type="file"
@@ -382,6 +485,18 @@ export function ResumeLibraryDialog({ open, onOpenChange }: ResumeLibraryDialogP
 
                     {activeTab === "paste" && (
                         <form onSubmit={handleSaveResume} className="space-y-4">
+                            {resumes.length >= 3 && oldestResume && (
+                                <div className="p-3 bg-amber-50/90 border border-amber-200/80 rounded-xl text-amber-800 text-xs flex items-start gap-2.5">
+                                    <AlertCircle className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                                    <div className="leading-relaxed">
+                                        <span className="font-semibold">Maximum capacity reached (3/3).</span>
+                                        {" "}Saving a new resume will automatically delete your oldest saved version:{" "}
+                                        <span className="font-semibold underline decoration-amber-400 underline-offset-2">
+                                            &ldquo;{oldestResume.name}&rdquo;
+                                        </span>.
+                                    </div>
+                                </div>
+                            )}
                             <div>
                                 <Label htmlFor="paste-resume-name" className="text-xs">
                                     Resume Version Name

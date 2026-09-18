@@ -9,3 +9,10 @@ export const createResumeSchema = z.object({
 });
 
 export type CreateResumeInput = z.infer<typeof createResumeSchema>;
+
+export const updateResumeNameSchema = z.object({
+    resumeId: z.string().trim().min(1, "Resume ID is required"),
+    name: z.string().trim().min(1, "Resume name is required").max(100, "Resume name cannot exceed 100 characters"),
+});
+
+export type UpdateResumeNameInput = z.infer<typeof updateResumeNameSchema>;

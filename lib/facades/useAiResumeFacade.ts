@@ -10,6 +10,7 @@ import {
     useOutreachMutation,
     useApplicationEmailMutation,
     useCreateResumeMutation,
+    useUpdateResumeNameMutation,
     useSetDefaultResumeMutation,
     useDeleteResumeMutation,
     useAttachResumeMutation,
@@ -29,6 +30,7 @@ export function useAiResumeFacade() {
     const outreachMutation = useOutreachMutation();
     const applicationEmailMutation = useApplicationEmailMutation();
     const createResumeMutation = useCreateResumeMutation();
+    const updateResumeNameMutation = useUpdateResumeNameMutation();
     const setDefaultResumeMutation = useSetDefaultResumeMutation();
     const deleteResumeMutation = useDeleteResumeMutation();
     const attachResumeMutation = useAttachResumeMutation();
@@ -239,6 +241,19 @@ export function useAiResumeFacade() {
         }
     }
 
+    async function renameResume(resumeId: string, name: string) {
+        const toastId = toast.loading("Updating resume name...");
+        try {
+            const res = await updateResumeNameMutation.mutateAsync({ resumeId, name });
+            toast.success("Resume renamed successfully!", { id: toastId });
+            return res;
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Failed to rename resume.";
+            toast.error(message, { id: toastId });
+            throw err;
+        }
+    }
+
     return {
         resumes,
         defaultResume,
@@ -250,11 +265,13 @@ export function useAiResumeFacade() {
         isGeneratingOutreach: outreachMutation.isPending,
         isGeneratingApplicationEmail: applicationEmailMutation.isPending,
         isSavingResume: createResumeMutation.isPending,
+        isRenamingResume: updateResumeNameMutation.isPending,
         runAtsMatch,
         generateCoverLetter,
         generateOutreach,
         generateApplicationEmail,
         createResume,
+        renameResume,
         setDefaultResume,
         deleteResume,
         attachResume,

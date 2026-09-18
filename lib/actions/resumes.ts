@@ -5,7 +5,12 @@ import mongoose from "mongoose";
 import { getSession } from "../auth/auth";
 import connectDB from "../db";
 import { Resume, JobApplication } from "../models";
-import { createResumeSchema, CreateResumeInput } from "../validations/resume";
+import {
+    createResumeSchema,
+    CreateResumeInput,
+    updateResumeNameSchema,
+    UpdateResumeNameInput,
+} from "../validations/resume";
 import { extractText } from "unpdf";
 
 export async function getUserResumes() {
@@ -50,8 +55,43 @@ export async function createResumeAction(input: CreateResumeInput) {
 
     await connectDB();
 
-    const existingCount = await Resume.countDocuments({ userId: session.user.id });
-    const shouldBeDefault = validated.data.isDefault || existingCount === 0;
+    // Fetch existing user resumes sorted by creation date ascending (oldest first)
+    const existingResumes = await Resume.find({ userId: session.user.id })
+        .sort({ createdAt: 1 })
+        .exec();
+
+    let wasEvictedDefault = false;
+
+    // Strict max 3 limit: if existing >= 3, delete the earliest (oldest) resume(s)
+    if (existingResumes.length >= 3) {
+        const numToDelete = existingResumes.length - 3 + 1;
+        const toDelete = existingResumes.slice(0, numToDelete);
+        const toDeleteIds = toDelete.map((r) => r._id);
+
+        wasEvictedDefault = toDelete.some((r) => r.isDefault);
+
+        await Resume.deleteMany({ _id: { $in: toDeleteIds } });
+    }
+
+    const remainingCount = Math.max(
+        0,
+        existingResumes.length - (existingResumes.length >= 3 ? existingResumes.length - 3 + 1 : 0)
+    );
+    let shouldBeDefault = validated.data.isDefault || remainingCount === 0;
+
+    if (wasEvictedDefault && !shouldBeDefault) {
+        // If an evicted resume was default and the new one was not requested as default,
+        // designate the most recent remaining resume as default
+        const latestRemaining = await Resume.findOne({ userId: session.user.id }).sort({
+            updatedAt: -1,
+        });
+        if (latestRemaining) {
+            latestRemaining.isDefault = true;
+            await latestRemaining.save();
+        } else {
+            shouldBeDefault = true;
+        }
+    }
 
     if (shouldBeDefault) {
         await Resume.updateMany(
@@ -74,6 +114,62 @@ export async function createResumeAction(input: CreateResumeInput) {
     return {
         error: null,
         data: JSON.parse(JSON.stringify(newResume)),
+    };
+}
+
+export async function updateResumeNameAction(input: UpdateResumeNameInput) {
+    const session = await getSession();
+
+    if (!session?.user) {
+        return {
+            error: "Unauthorized",
+            data: null,
+        };
+    }
+
+    const validated = updateResumeNameSchema.safeParse(input);
+    if (!validated.success) {
+        return {
+            error: validated.error.errors[0]?.message || "Invalid resume name input",
+            data: null,
+        };
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(validated.data.resumeId)) {
+        return {
+            error: "Resume not found",
+            data: null,
+        };
+    }
+
+    await connectDB();
+
+    const resume = await Resume.findOne({
+        _id: validated.data.resumeId,
+        userId: session.user.id,
+    });
+
+    if (!resume) {
+        return {
+            error: "Resume not found",
+            data: null,
+        };
+    }
+
+    resume.name = validated.data.name;
+    await resume.save();
+
+    // Synchronize attached resume name in job applications referencing this resume
+    await JobApplication.updateMany(
+        { userId: session.user.id, resumeId: resume._id },
+        { $set: { attachedResumeName: validated.data.name } }
+    );
+
+    revalidatePath("/dashboard");
+
+    return {
+        error: null,
+        data: JSON.parse(JSON.stringify(resume)),
     };
 }
 

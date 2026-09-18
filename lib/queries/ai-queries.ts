@@ -19,6 +19,7 @@ interface AiMutationResponse {
 import {
     getUserResumes,
     createResumeAction,
+    updateResumeNameAction,
     setDefaultResumeAction,
     deleteResumeAction,
     attachResumeToJobAction,
@@ -30,7 +31,7 @@ import {
     generateApplicationEmailAction,
     getUserUsageAction,
 } from "../actions/ai-intelligence";
-import { CreateResumeInput } from "../validations/resume";
+import { CreateResumeInput, UpdateResumeNameInput } from "../validations/resume";
 
 export const aiKeys = {
     all: ["ai"] as const,
@@ -304,6 +305,23 @@ export function useCreateResumeMutation() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: aiKeys.resumes() });
+            queryClient.invalidateQueries({ queryKey: boardKeys.all });
+        },
+    });
+}
+
+export function useUpdateResumeNameMutation() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload: UpdateResumeNameInput) => {
+            const res = await updateResumeNameAction(payload);
+            if (res.error) throw new Error(res.error);
+            return res.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: aiKeys.resumes() });
+            queryClient.invalidateQueries({ queryKey: boardKeys.all });
         },
     });
 }
