@@ -303,27 +303,27 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
             onDragEnd={handleDragEnd}
         >
             <div className="space-y-4">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className="relative w-full max-w-sm">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 max-w-full">
+                    <div className="relative w-full md:max-w-xs lg:max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Filter by company, role, or tag..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 h-9 bg-white shadow-xs"
+                            className="pl-9 h-9 bg-white shadow-xs w-full"
                         />
                     </div>
 
-                    <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
                         <CreditIndicator />
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setIsResumeLibraryOpen(true)}
-                            className="gap-1.5 bg-white text-slate-700 hover:text-indigo-600 shadow-xs border-slate-200"
+                            className="gap-1.5 bg-white text-slate-700 hover:text-indigo-600 shadow-xs border-slate-200 justify-center w-full sm:w-auto shrink-0 h-9 sm:h-8 cursor-pointer"
                         >
                             <FileText className="size-4 text-indigo-500" />
-                            Manage Resumes
+                            <span>Manage Resumes</span>
                         </Button>
                     </div>
                 </div>
