@@ -14,6 +14,7 @@ import { processAiTask, resolveResumeForJob } from "../ai/ai-processor";
 import { publishAiTask } from "../upstash/qstash";
 import { setAiJobStatus } from "../upstash/redis";
 import { stripHtmlTags } from "../utils";
+import { checkActionRateLimit } from "../ratelimit/action-guard";
 
 export async function runAtsMatchAction({
     jobId,
@@ -27,6 +28,18 @@ export async function runAtsMatchAction({
     if (!session?.user) {
         return {
             error: "Unauthorized",
+            data: null,
+        };
+    }
+
+    const rateCheck = await checkActionRateLimit({
+        actionName: "runAtsMatch",
+        userId: session.user.id,
+        tier: "sensitive",
+    });
+    if (!rateCheck.allowed) {
+        return {
+            error: rateCheck.error || "Rate limit exceeded. Please try again shortly.",
             data: null,
         };
     }
@@ -161,6 +174,18 @@ export async function generateCoverLetterAction({
         };
     }
 
+    const rateCheck = await checkActionRateLimit({
+        actionName: "generateCoverLetter",
+        userId: session.user.id,
+        tier: "sensitive",
+    });
+    if (!rateCheck.allowed) {
+        return {
+            error: rateCheck.error || "Rate limit exceeded. Please try again shortly.",
+            data: null,
+        };
+    }
+
     if (!mongoose.Types.ObjectId.isValid(jobId)) {
         return {
             error: "Job application not found",
@@ -291,6 +316,18 @@ export async function generateOutreachAction({
         };
     }
 
+    const rateCheck = await checkActionRateLimit({
+        actionName: "generateOutreach",
+        userId: session.user.id,
+        tier: "sensitive",
+    });
+    if (!rateCheck.allowed) {
+        return {
+            error: rateCheck.error || "Rate limit exceeded. Please try again shortly.",
+            data: null,
+        };
+    }
+
     if (!mongoose.Types.ObjectId.isValid(jobId)) {
         return {
             error: "Job application not found",
@@ -417,6 +454,18 @@ export async function generateApplicationEmailAction({
     if (!session?.user) {
         return {
             error: "Unauthorized",
+            data: null,
+        };
+    }
+
+    const rateCheck = await checkActionRateLimit({
+        actionName: "generateApplicationEmail",
+        userId: session.user.id,
+        tier: "sensitive",
+    });
+    if (!rateCheck.allowed) {
+        return {
+            error: rateCheck.error || "Rate limit exceeded. Please try again shortly.",
             data: null,
         };
     }
