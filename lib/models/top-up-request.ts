@@ -88,7 +88,6 @@ const TopUpRequestSchema = new Schema<ITopUpRequest>(
             required: true,
             trim: true,
             uppercase: true,
-            index: true,
         },
         status: {
             type: String,
@@ -123,6 +122,14 @@ const TopUpRequestSchema = new Schema<ITopUpRequest>(
     },
     {
         timestamps: true,
+    }
+);
+
+TopUpRequestSchema.index(
+    { transactionId: 1 },
+    {
+        unique: true,
+        partialFilterExpression: { status: { $in: ["pending", "approved"] } },
     }
 );
 

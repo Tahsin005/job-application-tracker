@@ -1,6 +1,11 @@
 import connectDB from "../lib/db";
 import "@/lib/models";
-import { Board, Column, JobApplication } from "@/lib/models";
+import { Board, Column, JobApplication, TopUpPackage, MfsProvider, AdminSettings } from "@/lib/models";
+import {
+    DEFAULT_TOP_UP_PACKAGES,
+    DEFAULT_MFS_PROVIDERS,
+    DEFAULT_MFS_SETTINGS,
+} from "../lib/constants/top-up-defaults";
 
 const USER_ID = "69ddd315fc2ab9cdb2059dcd";
 
@@ -319,6 +324,27 @@ async function seed() {
 
             await column.save();
             console.log(`✅ Added ${jobs.length} jobs to "${columnName}" column`);
+        }
+
+        // Seed TopUp Packages if none exist
+        const packageCount = await TopUpPackage.countDocuments();
+        if (packageCount === 0) {
+            await TopUpPackage.insertMany(DEFAULT_TOP_UP_PACKAGES);
+            console.log(`📦 Seeded ${DEFAULT_TOP_UP_PACKAGES.length} default top-up packages`);
+        }
+
+        // Seed MFS Providers if none exist
+        const providerCount = await MfsProvider.countDocuments();
+        if (providerCount === 0) {
+            await MfsProvider.insertMany(DEFAULT_MFS_PROVIDERS);
+            console.log(`💳 Seeded ${DEFAULT_MFS_PROVIDERS.length} default MFS providers`);
+        }
+
+        // Seed MFS Admin Settings if none exist
+        const settingsDoc = await AdminSettings.findOne({ key: "mfs_config" });
+        if (!settingsDoc) {
+            await AdminSettings.create(DEFAULT_MFS_SETTINGS);
+            console.log(`⚙️ Seeded default MFS settings`);
         }
 
         console.log(`\n🎉 Seed completed successfully!`);

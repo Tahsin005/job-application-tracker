@@ -9,121 +9,13 @@ import {
 } from "../validations/top-up";
 import { TopUpPackage as ITopUpPackageType, AdminMfsSettings as IAdminMfsSettingsType, MfsProvider as IMfsProviderType } from "../models/models.types";
 
-const DEFAULT_PACKAGES = [
-    {
-        name: "Level 1 - Starter Boost",
-        tierKey: "level1",
-        order: 1,
-        price: 150,
-        currency: "BDT",
-        description: "Great for active job hunters applying to a focused set of roles.",
-        badgeText: "Starter",
-        credits: {
-            atsScan: 10,
-            coverLetter: 10,
-            outreach: 10,
-            applicationEmail: 10,
-        },
-        isActive: true,
-    },
-    {
-        name: "Level 2 - Job Hunter Pack",
-        tierKey: "level2",
-        order: 2,
-        price: 300,
-        currency: "BDT",
-        description: "Our most popular pack for aggressive job search campaigns.",
-        badgeText: "Most Popular",
-        credits: {
-            atsScan: 25,
-            coverLetter: 25,
-            outreach: 25,
-            applicationEmail: 25,
-        },
-        isActive: true,
-    },
-    {
-        name: "Level 3 - Pro Accelerator",
-        tierKey: "pro",
-        order: 3,
-        price: 600,
-        currency: "BDT",
-        description: "Maximum firepower with ample credits for all AI resume tools.",
-        badgeText: "Best Value",
-        credits: {
-            atsScan: 60,
-            coverLetter: 60,
-            outreach: 60,
-            applicationEmail: 60,
-        },
-        isActive: true,
-    },
-];
-
-const DEFAULT_MFS_PROVIDERS = [
-    {
-        name: "bKash",
-        slug: "bkash",
-        accountType: "Personal",
-        accountNumber: "01700000000",
-        instructions: "Send Money using bKash Personal account.",
-        order: 1,
-        color: "#E2136E",
-        isActive: true,
-    },
-    {
-        name: "Nagad",
-        slug: "nagad",
-        accountType: "Personal",
-        accountNumber: "01800000000",
-        instructions: "Send Money using Nagad Personal account.",
-        order: 2,
-        color: "#F7941D",
-        isActive: true,
-    },
-    {
-        name: "Rocket",
-        slug: "rocket",
-        accountType: "Personal",
-        accountNumber: "01900000000",
-        instructions: "Send Money using Rocket Personal account.",
-        order: 3,
-        color: "#8C3494",
-        isActive: true,
-    },
-];
-
-const DEFAULT_MFS_SETTINGS = {
-    key: "mfs_config",
-    bkashNumber: "01700000000 (Personal - Send Money)",
-    nagadNumber: "01800000000 (Personal - Send Money)",
-    rocketNumber: "01900000000 (Personal - Send Money)",
-    upayNumber: "",
-    instructions:
-        "Send the exact amount via Personal Send Money. After payment, enter your sender mobile number and the Transaction ID (TrxID) below.",
-};
-
 export async function getActivePackagesAction() {
     try {
         await connectDB();
 
-        let packages = await TopUpPackage.find({ isActive: true }).sort({ order: 1 }).lean();
-
-        if (!packages || packages.length === 0) {
-            await TopUpPackage.insertMany(DEFAULT_PACKAGES);
-            packages = await TopUpPackage.find({ isActive: true }).sort({ order: 1 }).lean();
-        }
-
-        let providers = await MfsProvider.find({ isActive: true }).sort({ order: 1 }).lean();
-        if (!providers || providers.length === 0) {
-            await MfsProvider.insertMany(DEFAULT_MFS_PROVIDERS);
-            providers = await MfsProvider.find({ isActive: true }).sort({ order: 1 }).lean();
-        }
-
-        let mfsDoc = await AdminSettings.findOne({ key: "mfs_config" }).lean();
-        if (!mfsDoc) {
-            mfsDoc = await AdminSettings.create(DEFAULT_MFS_SETTINGS);
-        }
+        const packages = await TopUpPackage.find({ isActive: true }).sort({ order: 1 }).lean();
+        const providers = await MfsProvider.find({ isActive: true }).sort({ order: 1 }).lean();
+        const mfsDoc = await AdminSettings.findOne({ key: "mfs_config" }).lean();
 
         const serializedPackages = packages.map((pkg) => ({
             ...pkg,
@@ -140,13 +32,13 @@ export async function getActivePackagesAction() {
         })) as unknown as IMfsProviderType[];
 
         const serializedMfs: IAdminMfsSettingsType = {
-            key: mfsDoc.key,
-            bkashNumber: mfsDoc.bkashNumber,
-            nagadNumber: mfsDoc.nagadNumber,
-            rocketNumber: mfsDoc.rocketNumber,
-            upayNumber: mfsDoc.upayNumber || "",
-            instructions: mfsDoc.instructions,
-            updatedAt: mfsDoc.updatedAt ? new Date(mfsDoc.updatedAt).toISOString() : undefined,
+            key: mfsDoc?.key || "mfs_config",
+            bkashNumber: mfsDoc?.bkashNumber || "",
+            nagadNumber: mfsDoc?.nagadNumber || "",
+            rocketNumber: mfsDoc?.rocketNumber || "",
+            upayNumber: mfsDoc?.upayNumber || "",
+            instructions: mfsDoc?.instructions || "",
+            updatedAt: mfsDoc?.updatedAt ? new Date(mfsDoc.updatedAt).toISOString() : undefined,
         };
 
         return {
@@ -189,6 +81,11 @@ export async function submitTopUpRequestAction(rawInput: CreateTopUpRequestInput
         const pkg = await TopUpPackage.findById(packageId);
         if (!pkg || !pkg.isActive) {
             return { error: "Selected package is not available", data: null };
+        }
+
+        const activeProvider = await MfsProvider.findOne({ slug: paymentMethod, isActive: true });
+        if (!activeProvider) {
+            return { error: "The selected payment method is not currently active", data: null };
         }
 
         const cleanTrxId = transactionId.trim().toUpperCase();
@@ -244,6 +141,19 @@ export async function submitTopUpRequestAction(rawInput: CreateTopUpRequestInput
             },
         };
     } catch (err: unknown) {
+        // Handle MongoDB duplicate key error code 11000 for unique transactionId
+        if (
+            err &&
+            typeof err === "object" &&
+            "code" in err &&
+            (err as { code: number }).code === 11000
+        ) {
+            return {
+                error: "A verification request with this Transaction ID is already pending review or has been approved.",
+                data: null,
+            };
+        }
+
         console.error("Failed to submit top-up request:", err);
         return {
             error: err instanceof Error ? err.message : "Failed to submit top-up request",

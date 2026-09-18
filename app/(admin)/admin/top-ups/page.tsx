@@ -61,11 +61,15 @@ export default function AdminTopUpsPage() {
         limit: 10,
     });
 
-    const handleCopy = (text: string) => {
-        navigator.clipboard.writeText(text);
-        setCopiedTrx(text);
-        toast.success(`Copied "${text}" to clipboard!`);
-        setTimeout(() => setCopiedTrx(null), 2500);
+    const handleCopy = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopiedTrx(text);
+            toast.success(`Copied "${text}" to clipboard!`);
+            setTimeout(() => setCopiedTrx(null), 2500);
+        } catch {
+            toast.error("Could not copy the transaction ID.");
+        }
     };
 
     const handleApprove = async (req: TopUpRequest) => {

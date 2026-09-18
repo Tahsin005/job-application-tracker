@@ -49,7 +49,7 @@ function CreditRefillCallout({
                         Out of {featureName} credits?
                     </p>
                     <p className="text-[11px] text-amber-800/90">
-                        Top up instant packs to continue scanning, writing letters, and generating messages.
+                        Top up credit packs to continue scanning, writing letters, and generating messages.
                     </p>
                 </div>
             </div>

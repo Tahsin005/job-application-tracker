@@ -137,59 +137,78 @@ export async function reviewTopUpRequestAction(rawInput: ReviewTopUpRequestInput
 
         const { requestId, action, rejectionReason } = parsed.data;
 
-        const request = await TopUpRequest.findById(requestId);
-        if (!request) {
-            return { error: "Top-up request not found", data: null };
-        }
+        // Atomically claim the pending request to prevent concurrent double-approvals
+        const request = await TopUpRequest.findOneAndUpdate(
+            { _id: requestId, status: "pending" },
+            {
+                $set: {
+                    status: action === "approve" ? "approved" : "rejected",
+                    rejectionReason:
+                        action === "approve"
+                            ? ""
+                            : rejectionReason?.trim() || "Verification rejected by administrator",
+                    reviewedBy: authCheck.userName,
+                    reviewedAt: new Date(),
+                },
+            },
+            { returnDocument: "after" }
+        );
 
-        if (request.status !== "pending") {
+        if (!request) {
             return {
-                error: `Request has already been marked as ${request.status}.`,
+                error: "Top-up request not found or has already been reviewed.",
                 data: null,
             };
         }
 
         if (action === "approve") {
-            // 1. Ensure user usage record exists
-            await getOrCreateUserUsage(request.userId);
+            try {
+                // 1. Ensure user usage record exists
+                await getOrCreateUserUsage(request.userId);
 
-            // 2. Increment limits atomically
-            const credits = request.creditsSnapshot || {
-                atsScan: 0,
-                coverLetter: 0,
-                outreach: 0,
-                applicationEmail: 0,
-            };
+                // 2. Increment limits atomically
+                const credits = request.creditsSnapshot || {
+                    atsScan: 0,
+                    coverLetter: 0,
+                    outreach: 0,
+                    applicationEmail: 0,
+                };
 
-            const updatedUsage = await UserUsage.findOneAndUpdate(
-                { userId: request.userId },
-                {
-                    $inc: {
-                        atsScanLimit: credits.atsScan || 0,
-                        coverLetterLimit: credits.coverLetter || 0,
-                        outreachLimit: credits.outreach || 0,
-                        applicationEmailLimit: credits.applicationEmail || 0,
+                const updatedUsage = await UserUsage.findOneAndUpdate(
+                    { userId: request.userId },
+                    {
+                        $inc: {
+                            atsScanLimit: credits.atsScan || 0,
+                            coverLetterLimit: credits.coverLetter || 0,
+                            outreachLimit: credits.outreach || 0,
+                            applicationEmailLimit: credits.applicationEmail || 0,
+                        },
                     },
-                },
-                { returnDocument: "after" }
-            );
+                    { returnDocument: "after" }
+                );
 
-            if (!updatedUsage) {
-                return { error: "Failed to allocate credits to user usage", data: null };
+                if (!updatedUsage) {
+                    throw new Error("Failed to allocate credits to user usage");
+                }
+            } catch (creditError) {
+                // Roll back request status to pending if credit allocation fails
+                await TopUpRequest.updateOne(
+                    { _id: request._id },
+                    {
+                        $set: {
+                            status: "pending",
+                            reviewedBy: "",
+                            reviewedAt: null,
+                            rejectionReason: "",
+                        },
+                    }
+                );
+                console.error("Credit allocation failed, rolled back top-up status:", creditError);
+                return {
+                    error: creditError instanceof Error ? creditError.message : "Failed to allocate credits to user usage",
+                    data: null,
+                };
             }
-
-            // 3. Mark request as approved
-            request.status = "approved";
-            request.reviewedBy = authCheck.userName;
-            request.reviewedAt = new Date();
-            await request.save();
-        } else {
-            // Reject
-            request.status = "rejected";
-            request.rejectionReason = rejectionReason?.trim() || "Verification rejected by administrator";
-            request.reviewedBy = authCheck.userName;
-            request.reviewedAt = new Date();
-            await request.save();
         }
 
         revalidatePath("/admin/top-ups");

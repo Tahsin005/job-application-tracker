@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTopUpFacade } from "@/lib/facades/useTopUpFacade";
 import {
     createTopUpRequestSchema,
@@ -34,6 +35,7 @@ import {
     XCircle,
     Info,
     Smartphone,
+    AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,45 +65,10 @@ export function TopUpModal({
     const [selectedPackage, setSelectedPackage] = useState<TopUpPackage | null>(null);
     const [copiedField, setCopiedField] = useState<string | null>(null);
 
-    const activeMfsProviders = (mfsProviders || []).filter((p) => p.isActive);
-    const displayProviders =
-        activeMfsProviders.length > 0
-            ? activeMfsProviders
-            : [
-                  {
-                      _id: "bkash",
-                      name: "bKash",
-                      slug: "bkash",
-                      accountType: "Personal",
-                      accountNumber: mfsSettings?.bkashNumber || "01700000000",
-                      instructions: "Send Money using bKash Personal account.",
-                      order: 1,
-                      color: "#E2136E",
-                      isActive: true,
-                  },
-                  {
-                      _id: "nagad",
-                      name: "Nagad",
-                      slug: "nagad",
-                      accountType: "Personal",
-                      accountNumber: mfsSettings?.nagadNumber || "01800000000",
-                      instructions: "Send Money using Nagad Personal account.",
-                      order: 2,
-                      color: "#F7941D",
-                      isActive: true,
-                  },
-                  {
-                      _id: "rocket",
-                      name: "Rocket",
-                      slug: "rocket",
-                      accountType: "Personal",
-                      accountNumber: mfsSettings?.rocketNumber || "01900000000",
-                      instructions: "Send Money using Rocket Personal account.",
-                      order: 3,
-                      color: "#8C3494",
-                      isActive: true,
-                  },
-              ];
+    const displayProviders = useMemo(
+        () => (mfsProviders || []).filter((p) => p.isActive),
+        [mfsProviders]
+    );
 
     const {
         register,
@@ -123,25 +90,47 @@ export function TopUpModal({
 
     const selectedPaymentMethod = watch("paymentMethod");
 
+    useEffect(() => {
+        const slugs = displayProviders.map((p) => p.slug);
+        if (slugs.length > 0 && !slugs.includes(selectedPaymentMethod)) {
+            setValue("paymentMethod", slugs[0]);
+        }
+    }, [displayProviders, selectedPaymentMethod, setValue]);
+
+    useEffect(() => {
+        if (initialPackageId && packages) {
+            const matched = packages.find((p) => p._id === initialPackageId);
+            if (matched) {
+                setSelectedPackage(matched);
+                setValue("packageId", matched._id);
+            }
+        }
+    }, [initialPackageId, packages, setValue]);
+
     const handleSelectPackage = (pkg: TopUpPackage) => {
         setSelectedPackage(pkg);
         setValue("packageId", pkg._id);
         setActiveTab("payment");
     };
 
-    const handleCopy = (text: string, fieldName: string) => {
-        // Extract raw number if text contains extra notes
-        const cleanNumber = text.split(" ")[0].trim();
-        navigator.clipboard.writeText(cleanNumber);
-        setCopiedField(fieldName);
-        toast.success(`Copied ${cleanNumber} to clipboard!`);
-        setTimeout(() => setCopiedField(null), 2500);
+    const handleCopy = async (text: string, fieldName: string) => {
+        try {
+            // Extract raw number if text contains extra notes
+            const cleanNumber = text.split(" ")[0].trim();
+            await navigator.clipboard.writeText(cleanNumber);
+            setCopiedField(fieldName);
+            toast.success(`Copied ${cleanNumber} to clipboard!`);
+            setTimeout(() => setCopiedField(null), 2500);
+        } catch {
+            toast.error("Could not copy to clipboard.");
+        }
     };
 
     const onSubmit = async (values: CreateTopUpRequestInput) => {
         try {
             await submitTopUp(values);
             reset();
+            setSelectedPackage(null);
             setActiveTab("history");
         } catch {
             // Error handled by facade with toast
@@ -401,62 +390,85 @@ export function TopUpModal({
                                 <Label className="text-xs font-bold uppercase tracking-wider text-slate-500">
                                     Step 1: Send Money to Recipient Number
                                 </Label>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                                    {displayProviders.map((prov) => (
-                                        <div
-                                            key={prov._id || prov.slug}
-                                            className="p-3 rounded-xl border border-slate-200/80 bg-slate-50/50 flex flex-col justify-between shadow-2xs hover:border-slate-300 transition-colors"
-                                            style={{
-                                                borderLeftWidth: "4px",
-                                                borderLeftColor: prov.color || "#6366f1",
-                                            }}
-                                        >
-                                            <div>
-                                                <div className="flex items-center justify-between gap-1">
-                                                    <span className="font-bold text-slate-900 flex items-center gap-1.5">
-                                                        <span
-                                                            className="h-2 w-2 rounded-full shrink-0"
-                                                            style={{ backgroundColor: prov.color || "#6366f1" }}
-                                                        />
-                                                        {prov.name}
-                                                    </span>
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="text-[10px] px-1.5 py-0 bg-white font-medium text-slate-600 border-slate-200"
-                                                    >
-                                                        {prov.accountType || "Personal"}
-                                                    </Badge>
-                                                </div>
-                                                <p className="font-mono font-semibold text-slate-800 mt-2 text-xs">
-                                                    {prov.accountNumber}
-                                                </p>
-                                                {prov.instructions && (
-                                                    <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">
-                                                        {prov.instructions}
-                                                    </p>
-                                                )}
+
+                                {isLoadingPackages ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                        {[1, 2, 3].map((i) => (
+                                            <div key={i} className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                                                <Skeleton className="h-4 w-20" />
+                                                <Skeleton className="h-4 w-28" />
+                                                <Skeleton className="h-7 w-full rounded-md" />
                                             </div>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                className="w-full mt-2.5 h-7 text-[11px] text-slate-700 hover:bg-slate-200/60 font-medium"
-                                                onClick={() => handleCopy(prov.accountNumber, prov.slug)}
-                                            >
-                                                {copiedField === prov.slug ? (
-                                                    <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" />
-                                                ) : (
-                                                    <Copy className="h-3.5 w-3.5 mr-1" />
-                                                )}
-                                                {copiedField === prov.slug ? "Copied" : "Copy Number"}
-                                            </Button>
+                                        ))}
+                                    </div>
+                                ) : displayProviders.length === 0 ? (
+                                    <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-900 text-xs flex items-center gap-2.5">
+                                        <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+                                        <div>
+                                            <span className="font-semibold block">Payment Options Unavailable</span>
+                                            Payment recipient numbers are currently not configured. Please contact support or an administrator.
                                         </div>
-                                    ))}
-                                </div>
-                                <p className="text-[11px] text-slate-500 italic mt-1">
-                                    {mfsSettings?.instructions ||
-                                        "Send money using Personal account. Keep your Transaction ID (TrxID) handy."}
-                                </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                                            {displayProviders.map((prov) => (
+                                                <div
+                                                    key={prov._id || prov.slug}
+                                                    className="p-3 rounded-xl border border-slate-200/80 bg-slate-50/50 flex flex-col justify-between shadow-2xs hover:border-slate-300 transition-colors"
+                                                    style={{
+                                                        borderLeftWidth: "4px",
+                                                        borderLeftColor: prov.color || "#6366f1",
+                                                    }}
+                                                >
+                                                    <div>
+                                                        <div className="flex items-center justify-between gap-1">
+                                                            <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                                                                <span
+                                                                    className="h-2 w-2 rounded-full shrink-0"
+                                                                    style={{ backgroundColor: prov.color || "#6366f1" }}
+                                                                />
+                                                                {prov.name}
+                                                            </span>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-[10px] px-1.5 py-0 bg-white font-medium text-slate-600 border-slate-200"
+                                                            >
+                                                                {prov.accountType || "Personal"}
+                                                            </Badge>
+                                                        </div>
+                                                        <p className="font-mono font-semibold text-slate-800 mt-2 text-xs">
+                                                            {prov.accountNumber}
+                                                        </p>
+                                                        {prov.instructions && (
+                                                            <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">
+                                                                {prov.instructions}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="w-full mt-2.5 h-7 text-[11px] text-slate-700 hover:bg-slate-200/60 font-medium cursor-pointer"
+                                                        onClick={() => handleCopy(prov.accountNumber, prov.slug)}
+                                                    >
+                                                        {copiedField === prov.slug ? (
+                                                            <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" />
+                                                        ) : (
+                                                            <Copy className="h-3.5 w-3.5 mr-1" />
+                                                        )}
+                                                        {copiedField === prov.slug ? "Copied" : "Copy Number"}
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 italic mt-1">
+                                            {mfsSettings?.instructions ||
+                                                "Send money using Personal account. Keep your Transaction ID (TrxID) handy."}
+                                        </p>
+                                    </>
+                                )}
                             </div>
 
 
@@ -553,7 +565,7 @@ export function TopUpModal({
 
                                 <Button
                                     type="submit"
-                                    disabled={isSubmittingTopUp || !selectedPackage}
+                                    disabled={isSubmittingTopUp || !selectedPackage || displayProviders.length === 0}
                                     className="w-full bg-primary hover:bg-primary/90 text-white font-semibold text-xs h-10 shadow-xs"
                                 >
                                     {isSubmittingTopUp ? "Submitting for Verification..." : "Submit Payment Verification"}

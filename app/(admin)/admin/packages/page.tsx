@@ -106,12 +106,12 @@ export default function AdminPackagesPage() {
     } = useForm<UpdateAdminMfsSettingsInput>({
         resolver: zodResolver(updateAdminMfsSettingsSchema),
         values: {
-            bkashNumber: mfsSettings?.bkashNumber || "01700000000 (Personal - Send Money)",
-            nagadNumber: mfsSettings?.nagadNumber || "01800000000 (Personal - Send Money)",
-            rocketNumber: mfsSettings?.rocketNumber || "01900000000 (Personal - Send Money)",
-            upayNumber: mfsSettings?.upayNumber || "",
+            bkashNumber: mfsSettings?.bkashNumber ?? "",
+            nagadNumber: mfsSettings?.nagadNumber ?? "",
+            rocketNumber: mfsSettings?.rocketNumber ?? "",
+            upayNumber: mfsSettings?.upayNumber ?? "",
             instructions:
-                mfsSettings?.instructions ||
+                mfsSettings?.instructions ??
                 "Send the exact amount via Personal Send Money. After payment, enter your sender phone number and the Transaction ID (TrxID) below.",
         },
         resetOptions: { keepDefaultValues: true },
