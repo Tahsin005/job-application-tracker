@@ -24,7 +24,7 @@ export function CreditIndicator() {
     return (
         <>
             <div className="w-full sm:w-auto max-w-full bg-linear-to-r from-amber-50/80 via-orange-50/40 to-amber-50/70 border border-amber-200/90 rounded-2xl sm:rounded-full p-2.5 sm:px-3 sm:py-1.5 shadow-2xs hover:border-amber-300 transition-colors">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-2.5">
 
                     <div className="flex items-center justify-between sm:justify-start gap-2">
                         <div className="flex items-center gap-1.5 font-bold text-amber-950 text-xs">
@@ -53,7 +53,7 @@ export function CreditIndicator() {
                     </div>
 
 
-                    <div className="grid grid-cols-2 xs:grid-cols-4 sm:flex items-center gap-1.5">
+                    <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5">
                         <Badge
                             variant={usage.atsScan.remaining > 0 ? "success" : "destructive"}
                             className="px-2 sm:px-1.5 py-0.5 sm:py-0 text-[11px] font-normal justify-center whitespace-nowrap"

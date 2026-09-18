@@ -210,7 +210,10 @@ export function useAdminUpdateMfsSettingsMutation() {
     });
 }
 
-export function useUserAdminTopUpHistoryQuery(userId: string) {
+export function useUserAdminTopUpHistoryQuery(
+    userId: string,
+    { enabled = true }: { enabled?: boolean } = {}
+) {
     return useQuery({
         queryKey: topUpKeys.userAdminHistory(userId),
         queryFn: async () => {
@@ -218,7 +221,7 @@ export function useUserAdminTopUpHistoryQuery(userId: string) {
             if (res.error) throw new Error(res.error);
             return res.data;
         },
-        enabled: Boolean(userId),
+        enabled: Boolean(userId) && enabled,
     });
 }
 

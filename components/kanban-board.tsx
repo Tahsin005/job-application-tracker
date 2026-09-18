@@ -303,8 +303,8 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
             onDragEnd={handleDragEnd}
         >
             <div className="space-y-4">
-                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 md:gap-4 max-w-full">
-                    <div className="relative w-full md:max-w-xs lg:max-w-sm">
+                <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 xl:gap-4 max-w-full">
+                    <div className="relative w-full xl:max-w-xs 2xl:max-w-sm">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Filter by company, role, or tag..."
@@ -314,7 +314,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
                         />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+                    <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full xl:w-auto justify-start xl:justify-end">
                         <CreditIndicator />
                         <Button
                             variant="outline"

@@ -67,6 +67,21 @@ export function useTopUpFacade() {
     };
 }
 
+export interface UseAdminTopUpFacadeOptions {
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+    selectedUserId?: string;
+    scope?: "all" | "requests" | "catalog";
+    enableRequests?: boolean;
+    enableAnalytics?: boolean;
+    enablePackages?: boolean;
+    enableMfsSettings?: boolean;
+    enableMfsProviders?: boolean;
+    enableUserHistory?: boolean;
+}
+
 export function useAdminTopUpFacade({
     status,
     search,
@@ -74,50 +89,91 @@ export function useAdminTopUpFacade({
     limit,
     selectedUserId,
     scope = "all",
-}: {
-    status?: string;
-    search?: string;
-    page?: number;
-    limit?: number;
-    selectedUserId?: string;
-    scope?: "all" | "requests" | "catalog";
-} = {}) {
-    const enableRequests = scope === "all" || scope === "requests";
-    const enableCatalog = scope === "all" || scope === "catalog";
+    enableRequests: explicitEnableRequests,
+    enableAnalytics: explicitEnableAnalytics,
+    enablePackages: explicitEnablePackages,
+    enableMfsSettings: explicitEnableMfsSettings,
+    enableMfsProviders: explicitEnableMfsProviders,
+    enableUserHistory: explicitEnableUserHistory,
+}: UseAdminTopUpFacadeOptions = {}) {
+    const enableRequests = explicitEnableRequests ?? (scope === "all" || scope === "requests");
+    const enableAnalytics = explicitEnableAnalytics ?? (scope === "all" || scope === "requests");
+    const enablePackages = explicitEnablePackages ?? (scope === "all" || scope === "catalog");
+    const enableMfsSettings = explicitEnableMfsSettings ?? (scope === "all" || scope === "catalog");
+    const enableMfsProviders = explicitEnableMfsProviders ?? (scope === "all" || scope === "catalog");
+    const enableUserHistory = explicitEnableUserHistory ?? (scope === "all" || scope === "requests");
 
     // Admin queries & mutations
     const {
         data: requestsData,
         isLoading: isLoadingRequests,
-        refetch: refetchRequests,
+        refetch: rawRefetchRequests,
     } = useAdminTopUpRequestsQuery({ status, search, page, limit, enabled: enableRequests });
 
     const {
         data: analytics,
         isLoading: isLoadingAnalytics,
-        refetch: refetchAnalytics,
-    } = useAdminTopUpAnalyticsQuery({ enabled: enableRequests });
+        refetch: rawRefetchAnalytics,
+    } = useAdminTopUpAnalyticsQuery({ enabled: enableAnalytics });
 
     const {
         data: rawAllPackages,
         isLoading: isLoadingAllPackages,
-        refetch: refetchAllPackages,
-    } = useAdminPackagesQuery({ enabled: enableCatalog });
+        refetch: rawRefetchAllPackages,
+    } = useAdminPackagesQuery({ enabled: enablePackages });
 
     const allPackages = rawAllPackages || [];
 
-    const { data: mfsSettings, isLoading: isLoadingMfsSettings } = useAdminMfsSettingsQuery({ enabled: enableCatalog });
+    const {
+        data: mfsSettings,
+        isLoading: isLoadingMfsSettings,
+        refetch: rawRefetchMfsSettings,
+    } = useAdminMfsSettingsQuery({ enabled: enableMfsSettings });
 
     const {
         data: rawAllProviders,
         isLoading: isLoadingAllMfsProviders,
-        refetch: refetchAllMfsProviders,
-    } = useAdminMfsProvidersQuery({ enabled: enableCatalog });
+        refetch: rawRefetchAllMfsProviders,
+    } = useAdminMfsProvidersQuery({ enabled: enableMfsProviders });
 
     const allMfsProviders = rawAllProviders || [];
 
-    const { data: userAdminHistory, isLoading: isLoadingUserAdminHistory } =
-        useUserAdminTopUpHistoryQuery(selectedUserId || "");
+    const {
+        data: userAdminHistory,
+        isLoading: isLoadingUserAdminHistory,
+        refetch: rawRefetchUserAdminHistory,
+    } = useUserAdminTopUpHistoryQuery(selectedUserId || "", { enabled: enableUserHistory });
+
+    // Guard refetch methods so disabled queries never execute or trigger network requests on refetch
+    const refetchRequests = () => {
+        if (!enableRequests) return Promise.resolve(undefined);
+        return rawRefetchRequests();
+    };
+
+    const refetchAnalytics = () => {
+        if (!enableAnalytics) return Promise.resolve(undefined);
+        return rawRefetchAnalytics();
+    };
+
+    const refetchAllPackages = () => {
+        if (!enablePackages) return Promise.resolve(undefined);
+        return rawRefetchAllPackages();
+    };
+
+    const refetchMfsSettings = () => {
+        if (!enableMfsSettings) return Promise.resolve(undefined);
+        return rawRefetchMfsSettings();
+    };
+
+    const refetchAllMfsProviders = () => {
+        if (!enableMfsProviders) return Promise.resolve(undefined);
+        return rawRefetchAllMfsProviders();
+    };
+
+    const refetchUserAdminHistory = () => {
+        if (!enableUserHistory || !selectedUserId) return Promise.resolve(undefined);
+        return rawRefetchUserAdminHistory();
+    };
 
     const reviewMutation = useAdminReviewTopUpMutation();
     const upsertPackageMutation = useAdminUpsertPackageMutation();
@@ -249,6 +305,7 @@ export function useAdminTopUpFacade({
 
         mfsSettings,
         isLoadingMfsSettings,
+        refetchMfsSettings,
 
         allMfsProviders,
         isLoadingAllMfsProviders,
@@ -257,6 +314,7 @@ export function useAdminTopUpFacade({
         userAdminHistory: userAdminHistory?.requests || [],
         userTotalSpend: userAdminHistory?.totalSpend || 0,
         isLoadingUserAdminHistory,
+        refetchUserAdminHistory,
 
         isReviewing: reviewMutation.isPending,
         reviewRequest,
@@ -282,13 +340,21 @@ export function useAdminTopUpFacade({
 }
 
 export function useAdminRequestsFacade(
-    options: Omit<NonNullable<Parameters<typeof useAdminTopUpFacade>[0]>, "scope"> = {}
+    options: Omit<UseAdminTopUpFacadeOptions, "scope"> & {
+        includeMfs?: boolean;
+    } = {}
 ) {
-    return useAdminTopUpFacade({ ...options, scope: "requests" });
+    const { includeMfs = false, ...rest } = options;
+    return useAdminTopUpFacade({
+        ...rest,
+        scope: "requests",
+        enableMfsSettings: rest.enableMfsSettings ?? includeMfs,
+        enableMfsProviders: rest.enableMfsProviders ?? includeMfs,
+    });
 }
 
 export function useAdminCatalogFacade(
-    options: Omit<NonNullable<Parameters<typeof useAdminTopUpFacade>[0]>, "scope"> = {}
+    options: Omit<UseAdminTopUpFacadeOptions, "scope"> = {}
 ) {
     return useAdminTopUpFacade({ ...options, scope: "catalog" });
 }
