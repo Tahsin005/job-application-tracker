@@ -13,6 +13,9 @@ export default function Footer() {
                     © 2026 Job Application Tracker. All rights reserved.
                 </p>
                 <div className="flex items-center gap-4">
+                    <Link href="/terms" className="hover:text-foreground transition-colors">
+                        Terms of Service
+                    </Link>
                     <Link href="/sign-in" className="hover:text-foreground transition-colors">
                         Sign In
                     </Link>

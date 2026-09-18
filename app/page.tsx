@@ -13,9 +13,36 @@ import {
     Check,
 } from "lucide-react";
 
+const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Job Application Tracker",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    description:
+        "An intelligent, full-stack career platform to organize your job search pipeline, parse resumes, and land offers faster with AI assistance.",
+    offers: {
+        "@type": "Offer",
+        price: "0",
+        priceCurrency: "USD",
+    },
+    featureList: [
+        "Visual Kanban Pipeline",
+        "ATS Resume Keyword Matcher",
+        "Tailored Cover Letter Generator",
+        "Smart Multi-Resume Library",
+        "Interview Journey Tracker",
+        "Recruiter Outreach & Application Emails",
+    ],
+};
+
 export default function Home() {
     return (
         <div className="flex min-h-screen flex-col bg-white text-slate-900 selection:bg-primary/15 selection:text-primary">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
 
 
             <section className="relative pt-16 pb-20 sm:pt-24 sm:pb-32 border-b border-slate-100 bg-linear-to-b from-slate-50/90 via-slate-50/40 to-white overflow-hidden">
