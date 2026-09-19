@@ -1,6 +1,5 @@
 import { redis } from "../../upstash/redis";
 import { RateLimiterAdapter, RateLimitResult } from "../types";
-import { MemoryRateLimiterAdapter } from "./memory-adapter";
 
 const SLIDING_WINDOW_LUA = `
 local key = KEYS[1]
@@ -30,11 +29,16 @@ end
 `;
 
 export class UpstashRestRateLimiterAdapter implements RateLimiterAdapter {
-    private fallbackAdapter: MemoryRateLimiterAdapter = new MemoryRateLimiterAdapter();
-
     async consume(key: string, limit: number, windowSeconds: number): Promise<RateLimitResult> {
         if (!redis) {
-            return this.fallbackAdapter.consume(key, limit, windowSeconds);
+            console.error("[RateLimit UpstashRest] Redis client is not initialized, failing closed.");
+            return {
+                success: false,
+                limit,
+                remaining: 0,
+                retryAfter: windowSeconds,
+                resetSeconds: windowSeconds,
+            };
         }
 
         try {
@@ -58,8 +62,14 @@ export class UpstashRestRateLimiterAdapter implements RateLimiterAdapter {
                 resetSeconds: retryAfter,
             };
         } catch (err) {
-            console.warn("[RateLimit UpstashRest] Redis execution error, using in-memory fallback:", err);
-            return this.fallbackAdapter.consume(key, limit, windowSeconds);
+            console.error("[RateLimit UpstashRest] Redis execution error, failing closed:", err);
+            return {
+                success: false,
+                limit,
+                remaining: 0,
+                retryAfter: windowSeconds,
+                resetSeconds: windowSeconds,
+            };
         }
     }
 
@@ -71,6 +81,5 @@ export class UpstashRestRateLimiterAdapter implements RateLimiterAdapter {
                 // Ignore reset error
             }
         }
-        await this.fallbackAdapter.reset(key);
     }
 }

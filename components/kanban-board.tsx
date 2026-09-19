@@ -9,6 +9,7 @@ import {
     Mic,
     XCircle,
     FileText,
+    Search,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
@@ -16,12 +17,32 @@ import { Input } from "./ui/input";
 import CreateJobApplicationDialog from "./create-job-dialog";
 import JobApplicationCard from "./job-application-card";
 import { useBoardFacade } from "@/lib/facades/useBoardFacade";
-import { Search } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "./ui/dialog";
 import dynamic from "next/dynamic";
 
 const ResumeLibraryDialog = dynamic(
     () => import("./resume/resume-library-dialog").then((m) => m.ResumeLibraryDialog),
-    { ssr: false }
+    {
+        ssr: false,
+        loading: () => (
+            <Dialog open={true}>
+                <DialogContent className="w-[92vw] max-w-3xl max-h-[85vh] p-6" showCloseButton={false}>
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Loading Resume Library</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                        <div className="size-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-xs text-muted-foreground font-medium">Loading resume library...</p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        ),
+    }
 );
 import { CreditIndicator } from "./ai/credit-indicator";
 import {
@@ -302,6 +323,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
 
     return (
         <DndContext
+            id="kanban-board-dnd"
             sensors={sensors}
             collisionDetection={closestCorners}
             onDragStart={handleDragStart}

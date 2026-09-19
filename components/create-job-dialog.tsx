@@ -17,11 +17,30 @@ import { Plus } from "lucide-react";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import { Skeleton } from "./ui/skeleton";
 import dynamic from "next/dynamic";
 
 const RichTextEditor = dynamic(
     () => import("./ui/rich-text-editor").then((m) => m.RichTextEditor),
-    { ssr: false }
+    {
+        ssr: false,
+        loading: () => (
+            <div className="rounded-lg border border-input bg-background/50 p-3 space-y-2 min-h-[160px]">
+                <div className="flex gap-2 border-b border-border/40 pb-2">
+                    <Skeleton className="h-6 w-6 rounded" />
+                    <Skeleton className="h-6 w-6 rounded" />
+                    <Skeleton className="h-6 w-6 rounded" />
+                    <Skeleton className="h-6 w-6 rounded ml-2" />
+                    <Skeleton className="h-6 w-6 rounded" />
+                </div>
+                <div className="space-y-2 pt-2">
+                    <Skeleton className="h-3.5 w-3/4" />
+                    <Skeleton className="h-3.5 w-1/2" />
+                    <Skeleton className="h-3.5 w-5/6" />
+                </div>
+            </div>
+        ),
+    }
 );
 import { useBoardFacade } from "@/lib/facades/useBoardFacade";
 import {

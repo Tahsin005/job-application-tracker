@@ -5,7 +5,16 @@ import { MemoryRateLimiterAdapter } from "./adapters/memory-adapter";
 import { getTierConfig } from "./tiers";
 
 function getDefaultAdapter(): RateLimiterAdapter {
-    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    const hasUpstashUrl = Boolean(process.env.UPSTASH_REDIS_REST_URL);
+    const hasUpstashToken = Boolean(process.env.UPSTASH_REDIS_REST_TOKEN);
+
+    if (hasUpstashUrl !== hasUpstashToken) {
+        throw new Error(
+            "[RateLimiter] Incomplete Upstash configuration: both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set."
+        );
+    }
+
+    if (hasUpstashUrl && hasUpstashToken) {
         return new UpstashRestRateLimiterAdapter();
     }
     if (process.env.REDIS_URL) {

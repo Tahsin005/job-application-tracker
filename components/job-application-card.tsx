@@ -25,21 +25,69 @@ import {
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
+import { Skeleton } from "./ui/skeleton";
 import dynamic from "next/dynamic";
 
 const RichTextEditor = dynamic(
     () => import("./ui/rich-text-editor").then((m) => m.RichTextEditor),
-    { ssr: false }
+    {
+        ssr: false,
+        loading: () => (
+            <div className="rounded-lg border border-input bg-background/50 p-3 space-y-2 min-h-[160px]">
+                <div className="flex gap-2 border-b border-border/40 pb-2">
+                    <Skeleton className="h-6 w-6 rounded" />
+                    <Skeleton className="h-6 w-6 rounded" />
+                    <Skeleton className="h-6 w-6 rounded" />
+                    <Skeleton className="h-6 w-6 rounded ml-2" />
+                    <Skeleton className="h-6 w-6 rounded" />
+                </div>
+                <div className="space-y-2 pt-2">
+                    <Skeleton className="h-3.5 w-3/4" />
+                    <Skeleton className="h-3.5 w-1/2" />
+                    <Skeleton className="h-3.5 w-5/6" />
+                </div>
+            </div>
+        ),
+    }
 );
 
 const AtsAnalysisModal = dynamic(
     () => import("./ai/ats-analysis-modal").then((m) => m.AtsAnalysisModal),
-    { ssr: false }
+    {
+        ssr: false,
+        loading: () => (
+            <Dialog open={true}>
+                <DialogContent className="w-[94vw] sm:max-w-3xl lg:max-w-4xl max-h-[90vh] p-6" showCloseButton={false}>
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Loading ATS Analysis</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center justify-center py-16 space-y-3">
+                        <div className="size-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-xs text-muted-foreground font-medium">Loading ATS analysis...</p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        ),
+    }
 );
 
 const InterviewsTab = dynamic(
     () => import("./interviews/interviews-tab").then((m) => m.InterviewsTab),
-    { ssr: false }
+    {
+        ssr: false,
+        loading: () => (
+            <div className="space-y-4 py-2">
+                <div className="flex items-center justify-between">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-8 w-28 rounded-lg" />
+                </div>
+                <div className="space-y-3">
+                    <Skeleton className="h-24 w-full rounded-xl" />
+                    <Skeleton className="h-24 w-full rounded-xl" />
+                </div>
+            </div>
+        ),
+    }
 );
 
 import { cn, stripHtmlTags, truncateText } from "@/lib/utils";
