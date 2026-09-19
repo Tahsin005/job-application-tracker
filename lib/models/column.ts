@@ -40,4 +40,6 @@ const ColumnSchema = new Schema<IColumn>(
     }
 );
 
+ColumnSchema.index({ boardId: 1, order: 1 });
+
 export default mongoose.models.Column || mongoose.model<IColumn>("Column", ColumnSchema);

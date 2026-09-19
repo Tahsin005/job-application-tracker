@@ -17,7 +17,12 @@ import CreateJobApplicationDialog from "./create-job-dialog";
 import JobApplicationCard from "./job-application-card";
 import { useBoardFacade } from "@/lib/facades/useBoardFacade";
 import { Search } from "lucide-react";
-import { ResumeLibraryDialog } from "./resume/resume-library-dialog";
+import dynamic from "next/dynamic";
+
+const ResumeLibraryDialog = dynamic(
+    () => import("./resume/resume-library-dialog").then((m) => m.ResumeLibraryDialog),
+    { ssr: false }
+);
 import { CreditIndicator } from "./ai/credit-indicator";
 import {
     closestCorners,
@@ -328,10 +333,12 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
                     </div>
                 </div>
 
-                <ResumeLibraryDialog
-                    open={isResumeLibraryOpen}
-                    onOpenChange={setIsResumeLibraryOpen}
-                />
+                {isResumeLibraryOpen && (
+                    <ResumeLibraryDialog
+                        open={isResumeLibraryOpen}
+                        onOpenChange={setIsResumeLibraryOpen}
+                    />
+                )}
 
                 <div className="flex gap-4 overflow-x-auto pb-4">
                     {sortedColumns.map((col, key) => {

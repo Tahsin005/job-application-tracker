@@ -25,15 +25,29 @@ import {
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
-import { RichTextEditor } from "./ui/rich-text-editor";
+import dynamic from "next/dynamic";
+
+const RichTextEditor = dynamic(
+    () => import("./ui/rich-text-editor").then((m) => m.RichTextEditor),
+    { ssr: false }
+);
+
+const AtsAnalysisModal = dynamic(
+    () => import("./ai/ats-analysis-modal").then((m) => m.AtsAnalysisModal),
+    { ssr: false }
+);
+
+const InterviewsTab = dynamic(
+    () => import("./interviews/interviews-tab").then((m) => m.InterviewsTab),
+    { ssr: false }
+);
+
 import { cn, stripHtmlTags, truncateText } from "@/lib/utils";
 import { useBoardFacade } from "@/lib/facades/useBoardFacade";
 import {
     updateJobApplicationSchema,
     UpdateJobApplicationInput,
 } from "@/lib/validations/job-application";
-import { AtsAnalysisModal } from "./ai/ats-analysis-modal";
-import { InterviewsTab } from "./interviews/interviews-tab";
 
 interface JobApplicationCardProps {
     job: JobApplication;
@@ -338,12 +352,15 @@ export default function JobApplicationCard({
 
             {!isOverlay && (
                 <>
-                    <AtsAnalysisModal
-                        job={job}
-                        open={isAtsOpen}
-                        onOpenChange={setIsAtsOpen}
-                    />
-                    <Dialog open={isEditing} onOpenChange={setIsEditing}>
+                    {isAtsOpen && (
+                        <AtsAnalysisModal
+                            job={job}
+                            open={isAtsOpen}
+                            onOpenChange={setIsAtsOpen}
+                        />
+                    )}
+                    {isEditing && (
+                        <Dialog open={isEditing} onOpenChange={setIsEditing}>
                         <DialogContent className="w-[94vw] sm:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
                             <DialogHeader className="p-6 pb-3 border-b border-slate-100 bg-slate-50/50">
                                 <div className="flex items-start justify-between gap-4">
@@ -522,6 +539,7 @@ export default function JobApplicationCard({
                             )}
                         </DialogContent>
                     </Dialog>
+                    )}
                 </>
             )}
         </>

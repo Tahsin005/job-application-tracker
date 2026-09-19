@@ -17,7 +17,12 @@ import { Plus } from "lucide-react";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
-import { RichTextEditor } from "./ui/rich-text-editor";
+import dynamic from "next/dynamic";
+
+const RichTextEditor = dynamic(
+    () => import("./ui/rich-text-editor").then((m) => m.RichTextEditor),
+    { ssr: false }
+);
 import { useBoardFacade } from "@/lib/facades/useBoardFacade";
 import {
     createJobApplicationSchema,
@@ -79,8 +84,8 @@ export default function CreateJobApplicationDialog({
                     Add Job
                 </Button>
             </DialogTrigger>
-
-            <DialogContent className="w-[92vw] sm:max-w-2xl">
+            {open && (
+                <DialogContent className="w-[92vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Add Job Application</DialogTitle>
                     <DialogDescription>Track a new job application</DialogDescription>
@@ -204,6 +209,7 @@ export default function CreateJobApplicationDialog({
                     </DialogFooter>
                 </form>
             </DialogContent>
+            )}
         </Dialog>
     );
 }

@@ -4,27 +4,29 @@ import { getSession } from "@/lib/auth/auth";
 import connectDB from "@/lib/db";
 import { Board } from "@/lib/models";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, cache } from "react";
 
-async function getBoard(userId: string) {
+const getBoard = cache(async (userId: string) => {
     await connectDB();
 
     const boardDoc = await Board.findOne({
         userId: userId,
         name: "Job Hunt",
-    }).populate({
-        path: "columns",
-        populate: {
-            path: "jobApplications",
-        },
-    });
+    })
+        .populate({
+            path: "columns",
+            options: { sort: { order: 1 } },
+            populate: {
+                path: "jobApplications",
+                options: { sort: { order: 1 } },
+            },
+        })
+        .lean();
 
     if (!boardDoc) return null;
 
-    const board = JSON.parse(JSON.stringify(boardDoc));
-
-    return board;
-}
+    return JSON.parse(JSON.stringify(boardDoc));
+});
 
 async function DashboardPage() {
     const session = await getSession();

@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import Footer from "@/components/footer";
 import QueryProvider from "@/components/providers/query-provider";
 
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans" });
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 
 const baseUrl = process.env.BETTER_AUTH_URL || "https://jobtracker.io";
 

@@ -30,15 +30,24 @@ async function AdminDashboardContent() {
     let totalRevenue = 0;
 
     if (db) {
-        userCount = await db.collection("user").countDocuments();
-        jobCount = await db.collection("jobapplications").countDocuments();
-        resumeCount = await db.collection("resumes").countDocuments();
-        pendingTopUps = await db.collection("topuprequests").countDocuments({ status: "pending" });
+        const [users, jobs, resumes, topUps, revResult] = await Promise.all([
+            db.collection("user").countDocuments(),
+            db.collection("jobapplications").countDocuments(),
+            db.collection("resumes").countDocuments(),
+            db.collection("topuprequests").countDocuments({ status: "pending" }),
+            db
+                .collection("topuprequests")
+                .aggregate([
+                    { $match: { status: "approved" } },
+                    { $group: { _id: null, total: { $sum: "$amount" } } },
+                ])
+                .toArray(),
+        ]);
 
-        const revResult = await db.collection("topuprequests").aggregate([
-            { $match: { status: "approved" } },
-            { $group: { _id: null, total: { $sum: "$amount" } } },
-        ]).toArray();
+        userCount = users;
+        jobCount = jobs;
+        resumeCount = resumes;
+        pendingTopUps = topUps;
         totalRevenue = revResult[0]?.total || 0;
     }
 

@@ -26,13 +26,24 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Invalid jobId" }, { status: 400 });
     }
 
+    const status = await getAiJobStatus(type, jobId);
+
+    // Fast path: if Redis contains status with verified userId, return immediately without touching MongoDB
+    if (status && status.userId) {
+        if (status.userId !== session.user.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+        }
+        return NextResponse.json({
+            data: status,
+        });
+    }
+
+    // Fallback path: if Redis key expired or userId is absent, verify ownership in MongoDB
     await connectDB();
     const owns = await JobApplication.exists({ _id: jobId, userId: session.user.id });
     if (!owns) {
         return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-
-    const status = await getAiJobStatus(type, jobId);
 
     return NextResponse.json({
         data: status || { status: "idle" },

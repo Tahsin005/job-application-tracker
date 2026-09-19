@@ -5,7 +5,12 @@ import { useAiResumeFacade } from "@/lib/facades/useAiResumeFacade";
 import { Zap, Sparkles } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { TopUpModal } from "../top-up/top-up-modal";
+import dynamic from "next/dynamic";
+
+const TopUpModal = dynamic(
+    () => import("../top-up/top-up-modal").then((m) => m.TopUpModal),
+    { ssr: false }
+);
 
 export function CreditIndicator() {
     const { usage, isLoadingUsage } = useAiResumeFacade();
@@ -108,7 +113,9 @@ export function CreditIndicator() {
                 </div>
             </div>
 
-            <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
+            {topUpOpen && (
+                <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
+            )}
         </>
     );
 }

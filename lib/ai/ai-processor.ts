@@ -64,6 +64,7 @@ export async function processAiTask(payload: AiTaskPayload): Promise<{
         await setAiJobStatus(type, jobId, {
             status: "processing",
             step: "Connecting to database and resolving application...",
+            userId,
         });
 
         await connectDB();
@@ -92,6 +93,7 @@ export async function processAiTask(payload: AiTaskPayload): Promise<{
         await setAiJobStatus(type, jobId, {
             status: "processing",
             step: "Running AI generation...",
+            userId,
         });
 
         let resultData: unknown = null;
@@ -181,6 +183,7 @@ export async function processAiTask(payload: AiTaskPayload): Promise<{
             status: "completed",
             step: "Completed",
             data: resultData,
+            userId,
         });
 
         return {
@@ -207,6 +210,7 @@ export async function processAiTask(payload: AiTaskPayload): Promise<{
         await setAiJobStatus(type, jobId, {
             status: "failed",
             error,
+            userId,
         });
 
         return {

@@ -5,7 +5,15 @@ import { useBoardFacade } from "@/lib/facades/useBoardFacade";
 import DashboardTabs from "./dashboard-tabs";
 import { KanbanColumnsSkeleton } from "./dashboard-skeleton";
 import KanbanBoard from "@/components/kanban-board";
-import AnalyticsDashboard from "@/components/analytics/analytics-dashboard";
+import dynamic from "next/dynamic";
+
+const AnalyticsDashboard = dynamic(
+    () => import("@/components/analytics/analytics-dashboard"),
+    {
+        ssr: false,
+        loading: () => <KanbanColumnsSkeleton />,
+    }
+);
 
 interface DashboardViewProps {
     initialBoard: Board | null;

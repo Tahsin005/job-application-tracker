@@ -31,4 +31,6 @@ const BoardSchema = new Schema<IBoard>(
     }
 );
 
+BoardSchema.index({ userId: 1, name: 1 });
+
 export default mongoose.models.Board || mongoose.model<IBoard>("Board", BoardSchema);

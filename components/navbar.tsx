@@ -9,7 +9,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigg
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import SignOutButton from "./sign-out-btn";
 import { Skeleton } from "./ui/skeleton";
-import { TopUpModal } from "./top-up/top-up-modal";
+import dynamic from "next/dynamic";
+
+const TopUpModal = dynamic(
+    () => import("./top-up/top-up-modal").then((m) => m.TopUpModal),
+    { ssr: false }
+);
 
 export default function Navbar() {
     const { data: session, isPending } = useSession();
@@ -129,7 +134,9 @@ export default function Navbar() {
                                 </DropdownMenuContent>
                             </DropdownMenu>
 
-                            <TopUpModal open={isTopUpOpen} onOpenChange={setIsTopUpOpen} />
+                            {isTopUpOpen && (
+                                <TopUpModal open={isTopUpOpen} onOpenChange={setIsTopUpOpen} />
+                            )}
                         </>
                     ) : (
                         <div className="flex items-center gap-2">
