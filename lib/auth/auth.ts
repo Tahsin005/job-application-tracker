@@ -1,5 +1,6 @@
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { betterAuth } from "better-auth";
+import { captcha } from "better-auth/plugins";
 import connectDB from "../db";
 import { initializeUserBoard } from "../init-user-board";
 import { headers } from "next/headers";
@@ -45,6 +46,17 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
+    plugins: [
+        ...(process.env.RECAPTCHA_SECRET_KEY
+            ? [
+                  captcha({
+                      provider: "google-recaptcha",
+                      secretKey: process.env.RECAPTCHA_SECRET_KEY,
+                      minScore: 0.5,
+                  }),
+              ]
+            : []),
+    ],
     databaseHooks: {
         user: {
             create: {
