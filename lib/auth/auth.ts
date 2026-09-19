@@ -10,6 +10,23 @@ const mongooseInstance = await connectDB();
 const client = mongooseInstance.connection.getClient();
 const db = client.db();
 
+const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+const recaptchaSecretKey = process.env.RECAPTCHA_SECRET_KEY;
+const isProduction = process.env.NODE_ENV === "production";
+const isRecaptchaConfigured = Boolean(recaptchaSiteKey || recaptchaSecretKey);
+
+if (isProduction) {
+    if (!recaptchaSecretKey || !recaptchaSiteKey) {
+        throw new Error(
+            "[reCAPTCHA] Missing production security configuration: both NEXT_PUBLIC_RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY must be defined."
+        );
+    }
+} else if (isRecaptchaConfigured && (!recaptchaSecretKey || !recaptchaSiteKey)) {
+    throw new Error(
+        "[reCAPTCHA] Incomplete configuration: both NEXT_PUBLIC_RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY must be provided when reCAPTCHA is enabled."
+    );
+}
+
 export const auth = betterAuth({
     database: mongodbAdapter(db, {
         client,
@@ -47,11 +64,11 @@ export const auth = betterAuth({
         enabled: true,
     },
     plugins: [
-        ...(process.env.RECAPTCHA_SECRET_KEY
+        ...(recaptchaSecretKey
             ? [
                   captcha({
                       provider: "google-recaptcha",
-                      secretKey: process.env.RECAPTCHA_SECRET_KEY,
+                      secretKey: recaptchaSecretKey,
                       minScore: 0.5,
                   }),
               ]

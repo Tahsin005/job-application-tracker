@@ -12,6 +12,7 @@ export interface VerifyRecaptchaOptions {
     remoteIp?: string;
     minScore?: number;
     expectedAction?: string;
+    timeoutMs?: number;
 }
 
 export async function verifyRecaptchaToken(
@@ -23,7 +24,7 @@ export async function verifyRecaptchaToken(
     // Support legacy signature (token, remoteIp) as well as options object
     const resolvedOptions: VerifyRecaptchaOptions =
         typeof options === "string" ? { remoteIp: options } : options ?? {};
-    const { remoteIp, minScore = 0.5, expectedAction } = resolvedOptions;
+    const { remoteIp, minScore = 0.5, expectedAction, timeoutMs = 5000 } = resolvedOptions;
 
     if (!secretKey) {
         console.warn("[reCAPTCHA] RECAPTCHA_SECRET_KEY is not configured");
@@ -57,6 +58,7 @@ export async function verifyRecaptchaToken(
             },
             body: bodyParams.toString(),
             cache: "no-store",
+            signal: AbortSignal.timeout(timeoutMs),
         });
 
         if (!response.ok) {
@@ -117,6 +119,14 @@ export async function verifyRecaptchaToken(
             hostname: data.hostname,
         };
     } catch (err: unknown) {
+        if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
+            console.warn(`[reCAPTCHA] Verification request timed out after ${timeoutMs}ms`);
+            return {
+                success: false,
+                error: "reCAPTCHA verification request timed out. Please try again.",
+            };
+        }
+
         const message = err instanceof Error ? err.message : "Network error verifying reCAPTCHA";
         console.error("[reCAPTCHA] Verification error:", err);
         return {
