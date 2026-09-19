@@ -7,13 +7,14 @@ local key = KEYS[1]
 local limit = tonumber(ARGV[1])
 local window = tonumber(ARGV[2])
 local now = tonumber(ARGV[3])
+local member = ARGV[4]
 local clearBefore = now - (window * 1000)
 
 redis.call('ZREMRANGEBYSCORE', key, 0, clearBefore)
 local currentRequests = redis.call('ZCARD', key)
 
 if currentRequests < limit then
-    redis.call('ZADD', key, now, now)
+    redis.call('ZADD', key, now, member)
     redis.call('EXPIRE', key, window)
     return {1, limit - currentRequests - 1, window}
 else
@@ -98,13 +99,15 @@ export class IoRedisRateLimiterAdapter implements RateLimiterAdapter {
             }
 
             const now = Date.now();
+            const member = `${now}:${crypto.randomUUID()}`;
             const res = (await client.eval(
                 SLIDING_WINDOW_LUA,
                 1,
                 key,
                 limit,
                 windowSeconds,
-                now
+                now,
+                member
             )) as [number, number, number];
 
             const allowed = res[0] === 1;

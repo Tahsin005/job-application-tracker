@@ -28,7 +28,7 @@ export default async function proxy(request: NextRequest) {
     // 1. Admin routes with session cookie (must verify admin role)
     // 2. Auth routes (sign-in/sign-up) with session cookie (must redirect if already logged in)
     const requiresSessionResolution =
-        hasSessionCookie && (isAdminRoute || isAuthRoute);
+        hasSessionCookie && (isProtectedRoute || isAdminRoute || isAuthRoute);
 
     if (requiresSessionResolution) {
         try {
@@ -64,6 +64,10 @@ export default async function proxy(request: NextRequest) {
             return NextResponse.redirect(new URL("/dashboard", request.url));
         }
         return NextResponse.next();
+    }
+
+    if (isProtectedRoute && !session?.user) {
+        return NextResponse.redirect(new URL("/sign-in", request.url));
     }
 
     if (isAuthRoute && session?.user) {
