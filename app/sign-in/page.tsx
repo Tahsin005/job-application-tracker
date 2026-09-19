@@ -16,12 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from "@/lib/auth/auth-client";
 import { signInSchema, SignInFormData } from "@/lib/validations/auth";
+import { useRecaptcha, RecaptchaNotice } from "@/components/auth/recaptcha";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function SignIn() {
     const [serverError, setServerError] = useState("");
     const router = useRouter();
+    const { executeRecaptcha } = useRecaptcha();
 
     const {
         register,
@@ -38,10 +40,17 @@ export default function SignIn() {
     async function onSubmit(data: SignInFormData) {
         setServerError("");
 
+        const captchaToken = await executeRecaptcha("signin");
+
         try {
             const result = await signIn.email({
                 email: data.email,
                 password: data.password,
+                fetchOptions: {
+                    headers: {
+                        ...(captchaToken ? { "x-captcha-response": captchaToken } : {}),
+                    },
+                },
             });
 
             if (result.error) {
@@ -50,7 +59,7 @@ export default function SignIn() {
                 router.push("/dashboard");
             }
         } catch {
-            setServerError("An unexpected error occurred");
+            setServerError("An unexpected error occurred. Please try again.");
         }
     }
 
@@ -120,6 +129,7 @@ export default function SignIn() {
                                 Sign up
                             </Link>
                         </p>
+                        <RecaptchaNotice className="pt-2" />
                     </CardFooter>
                 </form>
             </Card>

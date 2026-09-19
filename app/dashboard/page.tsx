@@ -1,4 +1,5 @@
 import DashboardView from "@/components/dashboard/dashboard-view";
+import DashboardSkeleton from "@/components/dashboard/dashboard-skeleton";
 import { getSession } from "@/lib/auth/auth";
 import connectDB from "@/lib/db";
 import { Board } from "@/lib/models";
@@ -39,15 +40,7 @@ async function DashboardPage() {
 
 export default async function Dashboard() {
     return (
-        <Suspense fallback={
-            <div className="min-h-screen bg-white">
-                <div className="container mx-auto p-6">
-                    <div className="mb-6">
-                        <h1 className="text-3xl font-bold text-black">Loading...</h1>
-                    </div>
-                </div>
-            </div>
-        }>
+        <Suspense fallback={<DashboardSkeleton />}>
             <DashboardPage />
         </Suspense>
     );

@@ -1,5 +1,6 @@
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { betterAuth } from "better-auth";
+import { captcha } from "better-auth/plugins";
 import connectDB from "../db";
 import { initializeUserBoard } from "../init-user-board";
 import { headers } from "next/headers";
@@ -8,6 +9,23 @@ import { redirect } from "next/navigation";
 const mongooseInstance = await connectDB();
 const client = mongooseInstance.connection.getClient();
 const db = client.db();
+
+const recaptchaSiteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+const recaptchaSecretKey = process.env.RECAPTCHA_SECRET_KEY;
+const isProduction = process.env.NODE_ENV === "production";
+const isRecaptchaConfigured = Boolean(recaptchaSiteKey || recaptchaSecretKey);
+
+if (isProduction) {
+    if (!recaptchaSecretKey || !recaptchaSiteKey) {
+        throw new Error(
+            "[reCAPTCHA] Missing production security configuration: both NEXT_PUBLIC_RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY must be defined."
+        );
+    }
+} else if (isRecaptchaConfigured && (!recaptchaSecretKey || !recaptchaSiteKey)) {
+    throw new Error(
+        "[reCAPTCHA] Incomplete configuration: both NEXT_PUBLIC_RECAPTCHA_SITE_KEY and RECAPTCHA_SECRET_KEY must be provided when reCAPTCHA is enabled."
+    );
+}
 
 export const auth = betterAuth({
     database: mongodbAdapter(db, {
@@ -45,6 +63,33 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
     },
+    plugins: [
+        ...(recaptchaSecretKey
+            ? [
+                captcha({
+                    provider: "google-recaptcha",
+                    secretKey: recaptchaSecretKey,
+                    minScore: 0.5,
+                    endpoints: ["/sign-in/email"],
+                    expectedAction: "signin",
+                }),
+                captcha({
+                    provider: "google-recaptcha",
+                    secretKey: recaptchaSecretKey,
+                    minScore: 0.5,
+                    endpoints: ["/sign-up/email"],
+                    expectedAction: "signup",
+                }),
+                captcha({
+                    provider: "google-recaptcha",
+                    secretKey: recaptchaSecretKey,
+                    minScore: 0.5,
+                    endpoints: ["/request-password-reset"],
+                    expectedAction: "reset-password",
+                }),
+            ]
+            : []),
+    ],
     databaseHooks: {
         user: {
             create: {

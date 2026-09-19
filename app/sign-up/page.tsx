@@ -16,12 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signUp } from "@/lib/auth/auth-client";
 import { signUpSchema, SignUpFormData } from "@/lib/validations/auth";
+import { useRecaptcha, RecaptchaNotice } from "@/components/auth/recaptcha";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function SignUp() {
     const [serverError, setServerError] = useState("");
     const router = useRouter();
+    const { executeRecaptcha } = useRecaptcha();
 
     const {
         register,
@@ -39,11 +41,18 @@ export default function SignUp() {
     async function onSubmit(data: SignUpFormData) {
         setServerError("");
 
+        const captchaToken = await executeRecaptcha("signup");
+
         try {
             const result = await signUp.email({
                 name: data.name,
                 email: data.email,
                 password: data.password,
+                fetchOptions: {
+                    headers: {
+                        ...(captchaToken ? { "x-captcha-response": captchaToken } : {}),
+                    },
+                },
             });
 
             if (result.error) {
@@ -138,6 +147,7 @@ export default function SignUp() {
                                 Sign in
                             </Link>
                         </p>
+                        <RecaptchaNotice className="pt-2" />
                     </CardFooter>
                 </form>
             </Card>            
