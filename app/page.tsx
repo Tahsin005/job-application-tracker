@@ -234,7 +234,7 @@ export default function Home() {
             <section className="py-20 sm:py-28 bg-white border-b border-slate-100">
                 <div className="container mx-auto px-4 max-w-5xl">
                     <div className="text-center max-w-2xl mx-auto mb-14">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        <span className="text-xs font-bold tracking-wider text-slate-500">
                             Why Traditional Job Hunting Breaks Down
                         </span>
                         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mt-2">
@@ -305,7 +305,7 @@ export default function Home() {
             <section id="features" className="py-20 sm:py-28 bg-slate-50/60 border-b border-slate-100">
                 <div className="container mx-auto px-4 max-w-5xl">
                     <div className="text-center max-w-2xl mx-auto mb-16">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        <span className="text-xs font-bold tracking-wider text-slate-500">
                             Complete Career Toolset
                         </span>
                         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900 mt-2">
@@ -432,7 +432,7 @@ export default function Home() {
             <section className="py-20 sm:py-28 bg-white border-b border-slate-100">
                 <div className="container mx-auto px-4 max-w-4xl">
                     <div className="text-center max-w-xl mx-auto mb-16">
-                        <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        <span className="text-xs font-bold tracking-wider text-slate-500">
                             Effortless Routine
                         </span>
                         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 mt-2">

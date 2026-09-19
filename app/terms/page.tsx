@@ -157,7 +157,7 @@ export default function TermsOfServicePage() {
                             If you have any questions or concerns regarding these Terms of Service, please contact our support team at:
                         </p>
                         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-700 font-mono">
-                            Email: support@jobtracker.io
+                            Email: tahsin.ferdous3546@gmail.com
                         </div>
                     </section>
                 </article>

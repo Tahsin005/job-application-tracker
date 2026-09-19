@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import { Toaster } from "@/components/ui/sonner";
@@ -66,6 +67,10 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
   alternates: {
     canonical: "/",
   },
@@ -77,17 +82,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-      <html lang="en" className={outfit.variable}>
-        <body className="font-sans antialiased flex flex-col min-h-screen overflow-x-clip">
-          <QueryProvider>
-            <Navbar />
-            <main className="flex-1 min-w-0">
-              {children}
-            </main>
-            <Footer />
-            <Toaster />
-          </QueryProvider>
-        </body>
-      </html>
+    <html lang="en" className={outfit.variable}>
+      <body className="font-sans antialiased flex flex-col min-h-screen overflow-x-clip">
+        <QueryProvider>
+          <Navbar />
+          <main className="flex-1 min-w-0">
+            {children}
+          </main>
+          <Footer />
+          <Toaster />
+        </QueryProvider>
+        <Script
+          id="tawk-to"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+              (function(){
+              var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+              s1.async=true;
+              s1.src='https://embed.tawk.to/6aae7ae3008a9c344e420a93/1k2sp02bs';
+              s1.charset='UTF-8';
+              s1.setAttribute('crossorigin','*');
+              s0.parentNode.insertBefore(s1,s0);
+              })();
+            `,
+          }}
+        />
+      </body>
+    </html>
   );
 }
