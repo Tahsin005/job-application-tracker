@@ -9,10 +9,28 @@ export default async function proxy(request: NextRequest) {
     const isAdminRoute = pathname.startsWith("/admin");
 
     const cookieHeader = request.headers.get("cookie") || "";
+    const hasSessionCookie =
+        request.cookies.has("better-auth.session_token") ||
+        request.cookies.has("__Secure-better-auth.session_token");
+
     let session: { user?: { id: string; isAdmin?: boolean; role?: string } } | null = null;
 
-    // Resolve session if route requires auth or cookie is present
-    if (cookieHeader && (isAuthRoute || isProtectedRoute || isAdminRoute)) {
+    // Fast-path for protected routes without session cookie: instant edge redirect
+    if (isProtectedRoute && !hasSessionCookie) {
+        return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
+
+    if (isAdminRoute && !hasSessionCookie) {
+        return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
+
+    // Only resolve session via sub-request when strictly necessary:
+    // 1. Admin routes with session cookie (must verify admin role)
+    // 2. Auth routes (sign-in/sign-up) with session cookie (must redirect if already logged in)
+    const requiresSessionResolution =
+        hasSessionCookie && (isProtectedRoute || isAdminRoute || isAuthRoute);
+
+    if (requiresSessionResolution) {
         try {
             const response = await fetch(`${request.nextUrl.origin}/api/auth/get-session`, {
                 headers: {
@@ -26,8 +44,7 @@ export default async function proxy(request: NextRequest) {
         }
     }
 
-    // 1. Global & Route-Level Rate Limiting (Keyed by IP+Route or IP+User)
-    // Internal session lookups and signed machine queue callbacks are exempt from proxy rate limits
+    // 1. Global & Route-Level Rate Limiting (Keyed by IP+Route or User ID if resolved)
     const isExemptFromRateLimit =
         pathname === "/api/auth/get-session" || pathname.startsWith("/api/workers");
 

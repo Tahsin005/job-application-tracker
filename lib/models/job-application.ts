@@ -189,4 +189,7 @@ const JobApplicationSchema = new Schema<IJobApplication>(
     }
 );
 
+JobApplicationSchema.index({ columnId: 1, order: 1 });
+JobApplicationSchema.index({ boardId: 1, order: 1 });
+
 export default mongoose.models.JobApplication || mongoose.model<IJobApplication>("JobApplication", JobApplicationSchema);

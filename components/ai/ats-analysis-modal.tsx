@@ -228,21 +228,21 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
             <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="w-[94vw] sm:max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="p-6 pb-4 border-b border-slate-100 bg-slate-50/50">
-                    <div className="flex items-start justify-between gap-4">
-                        <div>
+                    <div className="flex items-start justify-between gap-4 pr-10 sm:pr-12">
+                        <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <Badge variant="outline" className="text-xs bg-white text-slate-700">
                                     <Briefcase className="size-3 mr-1" />
                                     {job.company}
                                 </Badge>
                                 {job.attachedResumeName && (
-                                    <Badge variant="secondary" className="text-[11px] gap-1 bg-indigo-50 text-indigo-700">
-                                        <FileText className="size-3" />
-                                        {job.attachedResumeName}
+                                    <Badge variant="secondary" className="text-[11px] gap-1 bg-indigo-50 text-indigo-700 max-w-[200px] sm:max-w-xs truncate">
+                                        <FileText className="size-3 shrink-0" />
+                                        <span className="truncate">{job.attachedResumeName}</span>
                                     </Badge>
                                 )}
                             </div>
-                            <DialogTitle className="text-xl font-bold text-slate-900">
+                            <DialogTitle className="text-xl font-bold text-slate-900 break-words">
                                 {job.position}
                             </DialogTitle>
                             <DialogDescription className="text-xs text-slate-500 mt-0.5">
@@ -250,7 +250,7 @@ export function AtsAnalysisModal({ job, open, onOpenChange }: AtsAnalysisModalPr
                             </DialogDescription>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0 pt-1">
+                        <div className="flex items-center gap-2 shrink-0 pt-0.5">
                             <Button
                                 variant="outline"
                                 size="sm"

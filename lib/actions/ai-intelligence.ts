@@ -93,6 +93,7 @@ export async function runAtsMatchAction({
     await setAiJobStatus("atsScan", jobId, {
         status: "queued",
         step: "Job queued in background",
+        userId: session.user.id,
     });
 
     let dispatch;
@@ -109,6 +110,7 @@ export async function runAtsMatchAction({
         await setAiJobStatus("atsScan", jobId, {
             status: "failed",
             error: "Failed to queue ATS analysis. Please try again.",
+            userId: session.user.id,
         });
         return {
             error: "Failed to queue ATS analysis. Please try again.",
@@ -235,6 +237,7 @@ export async function generateCoverLetterAction({
     await setAiJobStatus("coverLetter", jobId, {
         status: "queued",
         step: "Job queued in background",
+        userId: session.user.id,
     });
 
     let dispatch;
@@ -251,6 +254,7 @@ export async function generateCoverLetterAction({
         await setAiJobStatus("coverLetter", jobId, {
             status: "failed",
             error: "Failed to queue cover letter generation. Please try again.",
+            userId: session.user.id,
         });
         return {
             error: "Failed to queue cover letter generation. Please try again.",
@@ -377,6 +381,7 @@ export async function generateOutreachAction({
     await setAiJobStatus("outreach", jobId, {
         status: "queued",
         step: "Job queued in background",
+        userId: session.user.id,
     });
 
     let dispatch;
@@ -393,6 +398,7 @@ export async function generateOutreachAction({
         await setAiJobStatus("outreach", jobId, {
             status: "failed",
             error: "Failed to queue outreach message generation. Please try again.",
+            userId: session.user.id,
         });
         return {
             error: "Failed to queue outreach message generation. Please try again.",
@@ -528,6 +534,7 @@ export async function generateApplicationEmailAction({
     await setAiJobStatus("applicationEmail", jobId, {
         status: "queued",
         step: "Job queued in background",
+        userId: session.user.id,
     });
 
     let dispatch;
@@ -544,6 +551,7 @@ export async function generateApplicationEmailAction({
         await setAiJobStatus("applicationEmail", jobId, {
             status: "failed",
             error: "Failed to queue application email generation. Please try again.",
+            userId: session.user.id,
         });
         return {
             error: "Failed to queue application email generation. Please try again.",

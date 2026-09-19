@@ -325,12 +325,16 @@ export async function getUserBoard() {
     const boardDoc = await Board.findOne({
         userId: session.user.id,
         name: "Job Hunt",
-    }).populate({
-        path: "columns",
-        populate: {
-            path: "jobApplications",
-        },
-    });
+    })
+        .populate({
+            path: "columns",
+            options: { sort: { order: 1 } },
+            populate: {
+                path: "jobApplications",
+                options: { sort: { order: 1 } },
+            },
+        })
+        .lean();
 
     if (!boardDoc) {
         return { error: null, data: null };

@@ -1,6 +1,27 @@
 import { RateLimiterAdapter, RateLimitResult, RateLimitTier } from "./types";
 import { IoRedisRateLimiterAdapter } from "./adapters/ioredis-adapter";
+import { UpstashRestRateLimiterAdapter } from "./adapters/upstash-rest-adapter";
+import { MemoryRateLimiterAdapter } from "./adapters/memory-adapter";
 import { getTierConfig } from "./tiers";
+
+function getDefaultAdapter(): RateLimiterAdapter {
+    const hasUpstashUrl = Boolean(process.env.UPSTASH_REDIS_REST_URL);
+    const hasUpstashToken = Boolean(process.env.UPSTASH_REDIS_REST_TOKEN);
+
+    if (hasUpstashUrl !== hasUpstashToken) {
+        throw new Error(
+            "[RateLimiter] Incomplete Upstash configuration: both UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set."
+        );
+    }
+
+    if (hasUpstashUrl && hasUpstashToken) {
+        return new UpstashRestRateLimiterAdapter();
+    }
+    if (process.env.REDIS_URL) {
+        return new IoRedisRateLimiterAdapter();
+    }
+    return new MemoryRateLimiterAdapter();
+}
 
 export function getClientIp(
     source:
@@ -54,7 +75,7 @@ export class RateLimiter {
     private adapter: RateLimiterAdapter;
 
     constructor(adapter?: RateLimiterAdapter) {
-        this.adapter = adapter || new IoRedisRateLimiterAdapter();
+        this.adapter = adapter || getDefaultAdapter();
     }
 
     async check({

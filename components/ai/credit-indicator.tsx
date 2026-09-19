@@ -5,7 +5,33 @@ import { useAiResumeFacade } from "@/lib/facades/useAiResumeFacade";
 import { Zap, Sparkles } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { TopUpModal } from "../top-up/top-up-modal";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "../ui/dialog";
+import dynamic from "next/dynamic";
+
+const TopUpModal = dynamic(
+    () => import("../top-up/top-up-modal").then((m) => m.TopUpModal),
+    {
+        ssr: false,
+        loading: () => (
+            <Dialog open={true}>
+                <DialogContent className="sm:max-w-xl p-6" showCloseButton={false}>
+                    <DialogHeader className="sr-only">
+                        <DialogTitle>Loading Top Up</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                        <div className="size-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-xs text-muted-foreground font-medium">Loading top up options...</p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        ),
+    }
+);
 
 export function CreditIndicator() {
     const { usage, isLoadingUsage } = useAiResumeFacade();
@@ -108,7 +134,9 @@ export function CreditIndicator() {
                 </div>
             </div>
 
-            <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
+            {topUpOpen && (
+                <TopUpModal open={topUpOpen} onOpenChange={setTopUpOpen} />
+            )}
         </>
     );
 }

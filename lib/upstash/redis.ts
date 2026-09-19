@@ -19,6 +19,7 @@ export interface AiJobStatus {
     status: AiJobState;
     type: AiTaskType;
     jobId: string;
+    userId?: string;
     step?: string;
     error?: string;
     data?: unknown;
