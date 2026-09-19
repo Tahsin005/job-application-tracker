@@ -66,12 +66,28 @@ export const auth = betterAuth({
     plugins: [
         ...(recaptchaSecretKey
             ? [
-                  captcha({
-                      provider: "google-recaptcha",
-                      secretKey: recaptchaSecretKey,
-                      minScore: 0.5,
-                  }),
-              ]
+                captcha({
+                    provider: "google-recaptcha",
+                    secretKey: recaptchaSecretKey,
+                    minScore: 0.5,
+                    endpoints: ["/sign-in/email"],
+                    expectedAction: "signin",
+                }),
+                captcha({
+                    provider: "google-recaptcha",
+                    secretKey: recaptchaSecretKey,
+                    minScore: 0.5,
+                    endpoints: ["/sign-up/email"],
+                    expectedAction: "signup",
+                }),
+                captcha({
+                    provider: "google-recaptcha",
+                    secretKey: recaptchaSecretKey,
+                    minScore: 0.5,
+                    endpoints: ["/request-password-reset"],
+                    expectedAction: "reset-password",
+                }),
+            ]
             : []),
     ],
     databaseHooks: {

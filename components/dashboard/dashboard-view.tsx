@@ -3,6 +3,7 @@
 import { Board } from "@/lib/models/models.types";
 import { useBoardFacade } from "@/lib/facades/useBoardFacade";
 import DashboardTabs from "./dashboard-tabs";
+import { KanbanColumnsSkeleton } from "./dashboard-skeleton";
 import KanbanBoard from "@/components/kanban-board";
 import AnalyticsDashboard from "@/components/analytics/analytics-dashboard";
 
@@ -31,7 +32,7 @@ export default function DashboardView({ initialBoard, userId }: DashboardViewPro
                     currentBoard ? (
                         <KanbanBoard board={currentBoard} userId={userId} />
                     ) : (
-                        <div className="p-8 text-center text-slate-500">Loading board...</div>
+                        <KanbanColumnsSkeleton />
                     )
                 ) : (
                     <AnalyticsDashboard initialBoard={currentBoard} />
