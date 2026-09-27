@@ -188,14 +188,14 @@ export default function JobApplicationCard({
     return (
         <>
             <Card
-                className="cursor-pointer transition-shadow hover:shadow-lg bg-white group shadow-sm"
+                className="cursor-pointer glass-card glass-hover glass-shimmer rounded-xl border border-black/5 dark:border-white/10 group shadow-md"
                 {...dragHandleProps}
                 onClick={() => {
                     setActiveModalTab("details");
                     setIsEditing(true);
                 }}
             >
-                <CardContent className="p-4">
+                <CardContent className="p-3.5">
                     <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-sm mb-1">{job.position}</h3>
@@ -211,11 +211,11 @@ export default function JobApplicationCard({
                                         setActiveModalTab("interviews");
                                         setIsEditing(true);
                                     }}
-                                    className="flex items-center gap-1.5 px-2.5 py-1 mb-2 rounded-lg bg-indigo-50/90 border border-indigo-200/80 text-indigo-900 hover:bg-indigo-100/90 transition-colors text-[11px] font-medium cursor-pointer shadow-2xs"
+                                    className="flex items-center gap-1.5 px-2.5 py-1 mb-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/15 transition-colors text-[11px] font-medium cursor-pointer shadow-2xs"
                                     title="Upcoming Interview - Click to view schedule"
                                 >
-                                    <Calendar className="size-3.5 text-indigo-600 shrink-0" />
-                                    <span className="font-semibold text-indigo-950">
+                                    <Calendar className="size-3.5 text-indigo-500 shrink-0" />
+                                    <span className="font-semibold">
                                         {upcomingInterview.roundType}:
                                     </span>
                                     <span className="truncate">
@@ -301,7 +301,7 @@ export default function JobApplicationCard({
                                     {job.tags.map((tag, index) => (
                                         <span
                                             key={index}
-                                            className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300"
+                                            className="px-2 py-0.5 text-[10px] font-medium rounded-full glass-pill text-primary border border-primary/20"
                                         >
                                             {tag}
                                         </span>
@@ -409,32 +409,32 @@ export default function JobApplicationCard({
                     )}
                     {isEditing && (
                         <Dialog open={isEditing} onOpenChange={setIsEditing}>
-                        <DialogContent className="w-[94vw] sm:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
-                            <DialogHeader className="p-6 pb-3 border-b border-slate-100 bg-slate-50/50">
+                        <DialogContent className="w-[94vw] sm:max-w-3xl lg:max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden glass-panel border border-black/10 dark:border-white/10">
+                            <DialogHeader className="p-6 pb-3 border-b border-black/5 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]">
                                 <div className="flex items-start justify-between gap-4">
                                     <div>
-                                        <div className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-0.5">
+                                        <div className="text-xs font-semibold text-primary uppercase tracking-wider mb-0.5">
                                             {job.company}
                                         </div>
-                                        <DialogTitle className="text-xl font-bold text-slate-900">
+                                        <DialogTitle className="text-xl font-bold text-foreground">
                                             {job.position}
                                         </DialogTitle>
-                                        <DialogDescription className="text-xs text-slate-500 mt-0.5">
+                                        <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                                             Manage role information, interview stages, and status
                                         </DialogDescription>
                                     </div>
                                 </div>
 
 
-                                <div className="flex items-center gap-1.5 mt-3 p-1 bg-slate-200/70 rounded-xl w-fit text-xs font-medium">
+                                <div className="flex items-center gap-1.5 mt-3 p-1 glass-card rounded-full w-fit text-xs font-medium border border-black/5 dark:border-white/10">
                                     <button
                                         type="button"
                                         onClick={() => setActiveModalTab("details")}
                                         className={cn(
-                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer",
+                                            "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer",
                                             activeModalTab === "details"
-                                                ? "bg-white text-slate-900 shadow-xs font-semibold"
-                                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                                                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                                                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10"
                                         )}
                                     >
                                         <FileText className="size-3.5" />
@@ -444,16 +444,16 @@ export default function JobApplicationCard({
                                         type="button"
                                         onClick={() => setActiveModalTab("interviews")}
                                         className={cn(
-                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer",
+                                            "flex items-center gap-1.5 px-3.5 py-1.5 rounded-full transition-all cursor-pointer",
                                             activeModalTab === "interviews"
-                                                ? "bg-white text-slate-900 shadow-xs font-semibold"
-                                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                                                ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                                                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10"
                                         )}
                                     >
-                                        <Calendar className="size-3.5 text-indigo-600" />
+                                        <Calendar className="size-3.5 text-primary" />
                                         <span>Interviews</span>
                                         {job.interviews && job.interviews.length > 0 && (
-                                            <span className="size-4 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold flex items-center justify-center">
+                                            <span className="size-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center">
                                                 {job.interviews.length}
                                             </span>
                                         )}

@@ -69,9 +69,8 @@ function AdminHeaderContent() {
     };
 
     return (
-        <header className="border-b bg-white border-slate-200 sticky top-0 z-20 shadow-2xs">
-
-            <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-3">
+        <header className="border-b glass-panel !rounded-none border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/40 backdrop-blur-xl sticky top-16 z-20 shadow-2xs transition-colors duration-300">
+            <div className="container mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-3 max-w-7xl">
                 <div className="flex items-center gap-2.5 shrink-0">
                     <Link href="/admin" className="flex items-center gap-2.5 group">
                         <div className="h-8 w-8 rounded-lg bg-red-500/10 text-red-600 flex items-center justify-center font-bold transition-transform group-hover:scale-105">
@@ -148,8 +147,8 @@ function AdminHeaderContent() {
             </div>
 
 
-            <div className="border-t border-slate-100 bg-slate-50/60">
-                <div className="container mx-auto px-4">
+            <div className="border-t border-black/5 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 backdrop-blur-md">
+                <div className="container mx-auto px-3 sm:px-6 max-w-7xl">
                     <nav
                         className="flex items-center gap-1.5 py-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
                         aria-label="Admin Navigation Tabs"
@@ -183,8 +182,8 @@ function AdminHeaderContent() {
 
 function AdminHeaderSkeleton() {
     return (
-        <header className="border-b bg-white border-slate-200 sticky top-0 z-20 shadow-2xs">
-            <div className="container mx-auto px-4 h-14 flex items-center justify-between gap-3">
+        <header className="border-b glass-panel !rounded-none border-black/5 dark:border-white/10 bg-white/80 dark:bg-black/40 backdrop-blur-xl sticky top-16 z-20 shadow-2xs transition-colors duration-300">
+            <div className="container mx-auto px-3 sm:px-6 h-14 flex items-center justify-between gap-3 max-w-7xl">
                 <div className="flex items-center gap-2.5">
                     <div className="h-8 w-8 rounded-lg bg-red-500/10 text-red-600 flex items-center justify-center font-bold">
                         <ShieldCheck className="h-5 w-5" />
@@ -215,8 +214,8 @@ function AdminHeaderSkeleton() {
                 </div>
             </div>
 
-            <div className="border-t border-slate-100 bg-slate-50/60">
-                <div className="container mx-auto px-4">
+            <div className="border-t border-black/5 dark:border-white/5 bg-slate-50/50 dark:bg-black/20 backdrop-blur-md">
+                <div className="container mx-auto px-3 sm:px-6 max-w-7xl">
                     <div className="flex items-center gap-1.5 py-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                         {ADMIN_NAV_ITEMS.map((item) => (
                             <div

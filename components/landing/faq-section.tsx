@@ -43,43 +43,43 @@ export function FaqSection() {
     };
 
     return (
-        <section id="faq" className="py-20 sm:py-28 bg-white border-t border-slate-100">
-            <div className="container mx-auto px-4 max-w-3xl">
+        <section id="faq" className="py-20 sm:py-28 relative overflow-hidden">
+            <div className="container mx-auto px-4 max-w-3xl relative z-10">
                 <div className="text-center mb-12 sm:mb-16">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold mb-3">
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-pill text-xs font-semibold text-foreground/80 mb-3 shadow-2xs">
                         <HelpCircle className="size-3.5 text-primary" />
-                        <span>Frequently Asked Questions</span>
+                        <span className="tracking-[0.12em] text-[11px]">Frequently Asked Questions</span>
                     </div>
-                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-slate-900">
+                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-foreground">
                         Everything you need to know
                     </h2>
-                    <p className="mt-3 text-sm sm:text-base text-slate-600 max-w-xl mx-auto">
+                    <p className="mt-3 text-sm sm:text-base text-muted-foreground max-w-xl mx-auto">
                         Clear answers to common questions about using Job Application Tracker, AI credits, and privacy.
                     </p>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3.5">
                     {FAQ_ITEMS.map((item, idx) => {
                         const isOpen = openIndex === idx;
                         return (
                             <div
                                 key={idx}
-                                className="rounded-xl border border-slate-200/90 bg-white transition-all hover:border-slate-300 shadow-2xs overflow-hidden"
+                                className="rounded-2xl glass-card border border-black/5 dark:border-white/10 transition-all duration-300 overflow-hidden"
                             >
                                 <button
                                     type="button"
                                     onClick={() => toggle(idx)}
-                                    className="w-full text-left px-5 py-4 sm:px-6 sm:py-4.5 flex items-center justify-between gap-4 font-semibold text-sm sm:text-base text-slate-900 focus:outline-hidden"
+                                    className="w-full text-left px-5 py-4 sm:px-6 sm:py-4.5 flex items-center justify-between gap-4 font-semibold text-sm sm:text-base text-foreground focus:outline-hidden cursor-pointer"
                                     aria-expanded={isOpen}
                                 >
                                     <span>{item.question}</span>
                                     <ChevronDown
-                                        className={`size-4 text-slate-500 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-primary" : ""
+                                        className={`size-4 text-muted-foreground shrink-0 transition-transform duration-300 ${isOpen ? "rotate-180 text-primary" : ""
                                             }`}
                                     />
                                 </button>
                                 {isOpen && (
-                                    <div className="px-5 pb-5 sm:px-6 sm:pb-5 pt-0 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100/80">
+                                    <div className="px-5 pb-5 sm:px-6 sm:pb-5 pt-0 text-xs sm:text-sm text-muted-foreground leading-relaxed border-t border-black/5 dark:border-white/10">
                                         <p className="pt-3">{item.answer}</p>
                                     </div>
                                 )}

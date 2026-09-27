@@ -11,7 +11,6 @@ import {
     FileText,
     Search,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import CreateJobApplicationDialog from "./create-job-dialog";
@@ -117,27 +116,26 @@ function DroppableColumn({
 
     const sortedJobs = [...(column.jobApplications || [])].sort((a, b) => a.order - b.order);
     return (
-        <Card className="min-w-[300px] flex-shrink-0 shadow-md p-0">
-            <CardHeader
-                className={`${config.color} text-white rounded-t-lg pb-3 pt-3`}
-            >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+        <div className="min-w-[300px] sm:min-w-[320px] flex-shrink-0 glass-card rounded-2xl border border-black/5 dark:border-white/10 shadow-lg overflow-hidden flex flex-col backdrop-blur-2xl">
+            <div className="p-3.5 border-b border-black/5 dark:border-white/10 flex items-center justify-between bg-black/[0.02] dark:bg-white/[0.02]">
+                <div className="flex items-center gap-2">
+                    <div className={`p-1.5 rounded-lg ${config.color} text-white shadow-2xs`}>
                         {config.icon}
-                        <CardTitle className="text-white text-base font-semibold">
-                            {column.name}
-                        </CardTitle>
                     </div>
-                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/20 text-white">
-                        {sortedJobs.length}
-                    </span>
+                    <h3 className="text-sm font-bold text-foreground tracking-tight">
+                        {column.name}
+                    </h3>
                 </div>
-            </CardHeader>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full glass-pill text-foreground/80">
+                    {sortedJobs.length}
+                </span>
+            </div>
 
-            <CardContent
+            <div
                 ref={setNodeRef}
-                className={`space-y-2 pt-4 bg-gray-50/50 min-h-[400px] rounded-b-lg ${isOver ? "ring-2 ring-blue-500" : ""
-                    }`}
+                className={`space-y-2.5 p-3 flex-1 min-h-[420px] transition-all ${
+                    isOver ? "ring-2 ring-primary/40 bg-primary/5 rounded-b-2xl" : ""
+                }`}
             >
                 <SortableContext
                     items={sortedJobs.map((job) => job._id)}
@@ -153,8 +151,8 @@ function DroppableColumn({
                 </SortableContext>
 
                 <CreateJobApplicationDialog columnId={column._id} boardId={boardId} />
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }
 
@@ -337,7 +335,7 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
                             placeholder="Filter by company, role, or tag..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 h-9 bg-white shadow-xs w-full"
+                            className="pl-9 h-9.5 glass-input rounded-full text-xs shadow-2xs w-full"
                         />
                     </div>
 
@@ -347,9 +345,9 @@ export default function KanbanBoard({ board }: KanbanBoardProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => setIsResumeLibraryOpen(true)}
-                            className="gap-1.5 bg-white text-slate-700 hover:text-indigo-600 shadow-xs border-slate-200 justify-center w-full sm:w-auto shrink-0 h-9 sm:h-8 cursor-pointer"
+                            className="gap-1.5 glass-card hover:glass-hover border-black/10 dark:border-white/15 text-foreground rounded-full shadow-2xs justify-center w-full sm:w-auto shrink-0 h-9 sm:h-8.5 cursor-pointer"
                         >
-                            <FileText className="size-4 text-indigo-500" />
+                            <FileText className="size-4 text-primary" />
                             <span>Manage Resumes</span>
                         </Button>
                     </div>

@@ -123,10 +123,268 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
   }
+  h1, h2, h3, h4 {
+    letter-spacing: -0.025em;
+  }
+}
+
+/* ==========================================================================
+   🧊 Liquid Glass Design System Core
+   ========================================================================== */
+
+/* 1. Structural Glass (Navbar, Modals, Popovers, Overlays) */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow:
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.95),
+    0 8px 32px 0 rgba(15, 23, 42, 0.05);
+  border-radius: 1rem;
+}
+
+.dark .glass-panel {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.15),
+    0 8px 32px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* 2. Content Cards (Kanban Cards, Columns, Feature Cards, Tiles) */
+.glass-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.92),
+    0 4px 20px 0 rgba(15, 23, 42, 0.04);
+  border-radius: 1rem;
+  transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(60px);
+  -webkit-backdrop-filter: blur(60px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.12),
+    0 8px 24px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* 3. Interactive Lift Hover State */
+.glass-hover {
+  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(255, 255, 255, 1);
+  box-shadow:
+    inset 0 2px 1.5px 0 rgba(255, 255, 255, 1),
+    0 16px 36px 0 rgba(15, 23, 42, 0.08);
+  transform: translateY(-3px);
+}
+
+.dark .glass-hover:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 2px 1px 0 rgba(255, 255, 255, 0.25),
+    0 16px 48px 0 rgba(0, 0, 0, 0.55);
+  transform: translateY(-4px);
+}
+
+/* 4. Light Shimmer Sweep Effect */
+.glass-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 65%
+  );
+  transform: translateX(-100%) skewX(-15deg);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.dark .glass-shimmer::after {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 60%
+  );
+}
+
+.glass-shimmer:hover::after {
+  opacity: 1;
+  animation: shimmer 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 5. Frosted Glass Pills / Badges */
+.glass-pill {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.dark .glass-pill {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* 6. Liquid Glass Input */
+.glass-input {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1.5px 3px 0 rgba(0, 0, 0, 0.03);
+  transition: all 200ms ease;
+}
+
+.dark .glass-input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1.5px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.dark .glass-input:focus {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(165, 180, 252, 0.5);
+  box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.2);
+}
+
+/* 7. Keyframes & Animation System */
+@keyframes blob {
+  0%   { transform: translate(0px, 0px) scale(1); }
+  33%  { transform: translate(30px, -45px) scale(1.08); }
+  66%  { transform: translate(-25px, 20px) scale(0.94); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-8px); }
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes skeleton-sweep {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.animate-blob {
+  animation: blob 18s infinite alternate ease-in-out;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 4s ease-in-out infinite 2s;
+}
+
+.animate-marquee {
+  animation: marquee 35s linear infinite;
+}
+
+.animate-marquee-reverse {
+  animation: marquee 35s linear infinite reverse;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.1) 25%,
+    rgba(99, 102, 241, 0.12) 50%,
+    rgba(148, 163, 184, 0.1) 75%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-sweep 1.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* 8. Precision Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
 }
 
 /* TipTap ProseMirror Rich Text Editor Styles */

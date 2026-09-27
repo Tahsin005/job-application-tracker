@@ -97,17 +97,17 @@ export default function CreateJobApplicationDialog({
             <DialogTrigger asChild>
                 <Button
                     variant="outline"
-                    className="w-full mb-4 justify-start text-muted-foreground border-dashed border-2 hover:border-solid hover:bg-muted/50"
+                    className="w-full mb-3 justify-center text-muted-foreground hover:text-foreground border-dashed border-black/15 dark:border-white/15 hover:border-solid hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-all shadow-2xs cursor-pointer py-2 text-xs font-semibold"
                 >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Job
+                    <Plus className="mr-1.5 h-4 w-4 text-primary" />
+                    Add Application
                 </Button>
             </DialogTrigger>
             {open && (
-                <DialogContent className="w-[92vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="w-[92vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto glass-panel border border-black/10 dark:border-white/10 shadow-2xl p-6">
                 <DialogHeader>
-                    <DialogTitle>Add Job Application</DialogTitle>
-                    <DialogDescription>Track a new job application</DialogDescription>
+                    <DialogTitle className="text-xl font-bold text-foreground">Add Job Application</DialogTitle>
+                    <DialogDescription className="text-xs text-muted-foreground">Track a new job opportunity in your pipeline</DialogDescription>
                 </DialogHeader>
                 <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
                     <input type="hidden" {...register("columnId")} value={columnId} />

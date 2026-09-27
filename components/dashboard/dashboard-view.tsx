@@ -25,12 +25,17 @@ export default function DashboardView({ initialBoard, userId }: DashboardViewPro
     const currentBoard = board || initialBoard;
 
     return (
-        <div className="min-h-screen bg-white">
-            <div className="container mx-auto p-4 sm:p-6 max-w-7xl">
-                <div className="mb-4">
-                    <h1 className="text-3xl font-bold text-black">Job Hunt</h1>
-                    <p className="text-gray-600 text-sm">
-                        Track your applications and interviews
+        <div className="min-h-screen py-6 sm:py-8 relative">
+            <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
+                <div className="mb-6">
+                    <div className="text-[11px] font-semibold tracking-[0.18em] text-primary mb-1">
+                        Career Pipeline
+                    </div>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+                        Job Hunt
+                    </h1>
+                    <p className="text-muted-foreground text-sm mt-1">
+                        Track your applications, benchmark ATS scores, and manage interview rounds
                     </p>
                 </div>
 

@@ -13,12 +13,12 @@ export const metadata: Metadata = {
 
 export default function TermsOfServicePage() {
     return (
-        <div className="min-h-screen bg-white text-slate-900 selection:bg-primary/15 selection:text-primary py-12 sm:py-20">
-            <div className="container mx-auto px-4 max-w-4xl">
+        <div className="min-h-screen text-foreground py-12 sm:py-20 relative">
+            <div className="container mx-auto px-4 max-w-4xl relative z-10">
 
                 <div className="mb-8">
                     <Link href="/">
-                        <Button variant="ghost" size="sm" className="gap-2 text-xs text-slate-600 hover:text-slate-900 -ml-2">
+                        <Button variant="ghost" size="sm" className="gap-2 text-xs rounded-full glass-card hover:glass-hover border-black/10 dark:border-white/10 text-muted-foreground hover:text-foreground">
                             <ArrowLeft className="size-3.5" />
                             <span>Back to home</span>
                         </Button>
@@ -26,21 +26,22 @@ export default function TermsOfServicePage() {
                 </div>
 
 
-                <div className="pb-8 border-b border-slate-100 mb-10">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold mb-4">
-                        <Scale className="size-3.5 text-primary" />
-                        <span>Legal & Compliance</span>
+                <div className="glass-panel p-6 sm:p-10 rounded-3xl border border-black/10 dark:border-white/10 shadow-2xl backdrop-blur-2xl">
+                    <div className="pb-8 border-b border-black/5 dark:border-white/10 mb-10">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full glass-pill text-foreground/80 text-xs font-semibold mb-4">
+                            <Scale className="size-3.5 text-primary" />
+                            <span className="uppercase tracking-[0.14em] text-[11px]">Legal & Compliance</span>
+                        </div>
+                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground">
+                            Terms of Service
+                        </h1>
+                        <p className="mt-3 text-sm sm:text-base text-muted-foreground">
+                            Effective Date: January 1, 2026 • Last updated: September 19, 2026
+                        </p>
                     </div>
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900">
-                        Terms of Service
-                    </h1>
-                    <p className="mt-3 text-sm sm:text-base text-slate-500">
-                        Effective Date: January 1, 2026 • Last updated: September 19, 2026
-                    </p>
-                </div>
 
 
-                <article className="prose prose-slate max-w-none text-slate-700 space-y-8 text-sm sm:text-base leading-relaxed">
+                    <article className="space-y-8 text-sm sm:text-base text-muted-foreground leading-relaxed">
                     <section className="space-y-3">
                         <h2 className="text-xl font-bold text-slate-900 tracking-tight">
                             1. Acceptance of Terms
@@ -161,6 +162,7 @@ export default function TermsOfServicePage() {
                         </div>
                     </section>
                 </article>
+                </div>
             </div>
         </div>
     );

@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/sonner";
 
 import Footer from "@/components/footer";
 import QueryProvider from "@/components/providers/query-provider";
+import ThemeProvider from "@/components/providers/theme-provider";
+import AmbientBackground from "@/components/ambient-background";
 
 const outfit = Outfit({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
 
@@ -84,16 +86,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={outfit.variable}>
-      <body className="font-sans antialiased flex flex-col min-h-screen overflow-x-clip">
-        <QueryProvider>
-          <Navbar />
-          <main className="flex-1 min-w-0">
-            {children}
-          </main>
-          <Footer />
-          <Toaster />
-        </QueryProvider>
+    <html lang="en" className={outfit.variable} suppressHydrationWarning>
+      <body className="font-sans antialiased flex flex-col min-h-screen overflow-x-clip relative selection:bg-primary/20 selection:text-primary">
+        <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
+          <QueryProvider>
+            <AmbientBackground />
+            <Navbar />
+            <main className="flex-1 min-w-0 relative z-0">
+              {children}
+            </main>
+            <Footer />
+            <Toaster />
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

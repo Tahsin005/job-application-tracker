@@ -157,13 +157,13 @@ export function TopUpModal({
                     </DialogHeader>
 
 
-                    <div className="flex items-center gap-1.5 mt-4 p-1 bg-white/80 backdrop-blur rounded-xl border border-slate-200/80 shadow-2xs">
+                    <div className="flex items-center gap-1.5 mt-4 p-1 glass-card rounded-full border border-black/5 dark:border-white/10 shadow-2xs">
                         <button
                             type="button"
                             onClick={() => setActiveTab("packages")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-lg transition-all ${activeTab === "packages"
-                                    ? "bg-primary text-white shadow-xs"
-                                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60"
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-full transition-all cursor-pointer ${activeTab === "packages"
+                                    ? "bg-primary text-primary-foreground shadow-xs"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10"
                                 }`}
                         >
                             <Sparkles className="h-3.5 w-3.5" />
@@ -172,15 +172,15 @@ export function TopUpModal({
                         <button
                             type="button"
                             onClick={() => setActiveTab("payment")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-lg transition-all ${activeTab === "payment"
-                                    ? "bg-primary text-white shadow-xs"
-                                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60"
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-full transition-all cursor-pointer ${activeTab === "payment"
+                                    ? "bg-primary text-primary-foreground shadow-xs"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10"
                                 }`}
                         >
                             <CreditCard className="h-3.5 w-3.5" />
                             MFS Payment
                             {selectedPackage && (
-                                <Badge className="bg-amber-400 text-slate-900 hover:bg-amber-400 text-[10px] px-1 py-0 h-4">
+                                <Badge className="bg-amber-400 text-slate-900 hover:bg-amber-400 text-[10px] px-1 py-0 h-4 rounded-full">
                                     Selected
                                 </Badge>
                             )}
@@ -188,15 +188,15 @@ export function TopUpModal({
                         <button
                             type="button"
                             onClick={() => setActiveTab("history")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-lg transition-all ${activeTab === "history"
-                                    ? "bg-primary text-white shadow-xs"
-                                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60"
+                            className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold rounded-full transition-all cursor-pointer ${activeTab === "history"
+                                    ? "bg-primary text-primary-foreground shadow-xs"
+                                    : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10"
                                 }`}
                         >
                             <History className="h-3.5 w-3.5" />
                             My History
                             {userHistory.length > 0 && (
-                                <span className="h-4 w-4 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold flex items-center justify-center">
+                                <span className="h-4 w-4 rounded-full bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center">
                                     {userHistory.length}
                                 </span>
                             )}

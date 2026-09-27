@@ -6,10 +6,10 @@ export default function AdminLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="min-h-[calc(100vh-4rem)] bg-slate-50/50">
+        <div className="min-h-[calc(100vh-4rem)]">
             <AdminHeader />
 
-            <main className="container mx-auto p-4 sm:p-6">
+            <main className="container mx-auto px-3 sm:px-6 py-6 sm:py-8 max-w-7xl">
                 {children}
             </main>
         </div>

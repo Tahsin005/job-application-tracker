@@ -80,7 +80,7 @@ async function AdminDashboardContent() {
                 </div>
             </div>
 
-            <Card className="border-slate-200 bg-white shadow-xs">
+            <Card className="glass-card border-black/5 dark:border-white/10 shadow-xs">
                 <CardHeader className="pb-3">
                     <div className="flex items-center gap-2">
                         <ShieldCheck className="h-5 w-5 text-red-600" />
@@ -91,14 +91,14 @@ async function AdminDashboardContent() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="pt-0">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm bg-white/60 dark:bg-white/5 p-4 rounded-xl border border-black/5 dark:border-white/5">
                         <div>
                             <span className="text-slate-500 block text-xs tracking-wider font-semibold">User Name</span>
-                            <span className="font-medium text-slate-800">{session.user.name}</span>
+                            <span className="font-medium text-slate-800 dark:text-slate-200">{session.user.name}</span>
                         </div>
                         <div>
                             <span className="text-slate-500 block text-xs tracking-wider font-semibold">Email</span>
-                            <span className="font-medium text-slate-800">{session.user.email}</span>
+                            <span className="font-medium text-slate-800 dark:text-slate-200">{session.user.email}</span>
                         </div>
                         <div>
                             <span className="text-slate-500 block text-xs tracking-wider font-semibold">Role Status</span>
@@ -116,13 +116,13 @@ async function AdminDashboardContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 
                 <Link href="/admin/top-ups" className="block group">
-                    <Card className="border-slate-200 bg-white shadow-xs group-hover:border-emerald-500/50 group-hover:shadow-sm transition-all h-full">
+                    <Card className="glass-card glass-hover border-black/5 dark:border-white/10 shadow-xs group-hover:border-emerald-500/40 transition-all h-full">
                         <CardContent className="p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-xs font-semibold text-slate-500 tracking-wider group-hover:text-emerald-600 transition-colors">
                                     Top-Up Revenue
                                 </p>
-                                <h3 className="text-3xl font-bold text-slate-900 mt-2">
+                                <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">
                                     ৳ {totalRevenue.toLocaleString()}
                                 </h3>
                                 <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
@@ -138,13 +138,13 @@ async function AdminDashboardContent() {
 
 
                 <Link href="/admin/top-ups" className="block group">
-                    <Card className={`border-slate-200 bg-white shadow-xs group-hover:border-amber-500/50 group-hover:shadow-sm transition-all h-full ${pendingTopUps > 0 ? "border-amber-300 ring-1 ring-amber-200" : ""}`}>
+                    <Card className={`glass-card glass-hover border-black/5 dark:border-white/10 shadow-xs group-hover:border-amber-500/40 transition-all h-full ${pendingTopUps > 0 ? "border-amber-300 ring-1 ring-amber-200" : ""}`}>
                         <CardContent className="p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-xs font-semibold text-slate-500 tracking-wider group-hover:text-amber-600 transition-colors">
                                     Pending Top-Up Verifications
                                 </p>
-                                <h3 className="text-3xl font-bold text-slate-900 mt-2">{pendingTopUps}</h3>
+                                <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">{pendingTopUps}</h3>
                                 <p className="text-xs text-amber-600 font-medium mt-1 flex items-center gap-1">
                                     Review Queue <ArrowRight className="h-3 w-3" />
                                 </p>
@@ -158,13 +158,13 @@ async function AdminDashboardContent() {
 
 
                 <Link href="/admin/users" className="block group">
-                    <Card className="border-slate-200 bg-white shadow-xs group-hover:border-primary/50 group-hover:shadow-sm transition-all h-full">
+                    <Card className="glass-card glass-hover border-black/5 dark:border-white/10 shadow-xs group-hover:border-primary/40 transition-all h-full">
                         <CardContent className="p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-xs font-semibold text-slate-500 tracking-wider group-hover:text-primary transition-colors">
                                     Total Users
                                 </p>
-                                <h3 className="text-3xl font-bold text-slate-900 mt-2">{userCount}</h3>
+                                <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">{userCount}</h3>
                                 <p className="text-xs text-primary font-medium mt-1 flex items-center gap-1">
                                     Manage Directory <ArrowRight className="h-3 w-3" />
                                 </p>
@@ -177,11 +177,11 @@ async function AdminDashboardContent() {
                 </Link>
 
 
-                <Card className="border-slate-200 bg-white shadow-xs">
+                <Card className="glass-card border-black/5 dark:border-white/10 shadow-xs">
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-semibold text-slate-500 tracking-wider">Job Applications</p>
-                            <h3 className="text-3xl font-bold text-slate-900 mt-2">{jobCount}</h3>
+                            <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">{jobCount}</h3>
                             <p className="text-xs text-slate-400 mt-1">Platform-wide applications</p>
                         </div>
                         <div className="h-12 w-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
@@ -191,11 +191,11 @@ async function AdminDashboardContent() {
                 </Card>
 
 
-                <Card className="border-slate-200 bg-white shadow-xs">
+                <Card className="glass-card border-black/5 dark:border-white/10 shadow-xs">
                     <CardContent className="p-6 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-semibold text-slate-500 tracking-wider">Resumes Stored</p>
-                            <h3 className="text-3xl font-bold text-slate-900 mt-2">{resumeCount}</h3>
+                            <h3 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-2">{resumeCount}</h3>
                             <p className="text-xs text-slate-400 mt-1">Candidate uploaded resumes</p>
                         </div>
                         <div className="h-12 w-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
@@ -206,13 +206,13 @@ async function AdminDashboardContent() {
 
 
                 <Link href="/admin/ai" className="block group">
-                    <Card className="border-slate-200 bg-white shadow-xs group-hover:border-primary/50 group-hover:shadow-sm transition-all h-full">
+                    <Card className="glass-card glass-hover border-black/5 dark:border-white/10 shadow-xs group-hover:border-primary/40 transition-all h-full">
                         <CardContent className="p-6 flex items-center justify-between">
                             <div className="min-w-0 flex-1 pr-2">
                                 <p className="text-xs font-semibold text-slate-500 tracking-wider group-hover:text-primary transition-colors truncate">
                                     Active AI Provider
                                 </p>
-                                <h3 className="text-lg font-bold text-slate-900 mt-2 truncate font-mono">
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-2 truncate font-mono">
                                     {activeAi.config.model}
                                 </h3>
                                 <p className="text-xs text-primary font-medium mt-1 flex items-center gap-1">

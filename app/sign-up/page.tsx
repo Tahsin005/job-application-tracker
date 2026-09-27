@@ -66,13 +66,13 @@ export default function SignUp() {
     }
 
     return (
-        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-white p-4">
-            <Card className="w-full max-w-md border-gray-200 shadow-lg">
+        <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4 py-12 relative">
+            <Card className="w-full max-w-md glass-panel p-2 sm:p-4 shadow-2xl border border-black/10 dark:border-white/10 rounded-3xl backdrop-blur-2xl">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold text-black">
+                    <CardTitle className="text-2xl font-extrabold tracking-tight text-foreground">
                         Sign Up
                     </CardTitle>
-                    <CardDescription className="text-gray-600">
+                    <CardDescription className="text-muted-foreground text-xs sm:text-sm">
                         Create an account to start tracking your job applications
                     </CardDescription>
                 </CardHeader>
@@ -80,12 +80,12 @@ export default function SignUp() {
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <CardContent className="space-y-4">
                         {serverError && (
-                            <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                            <div className="rounded-xl bg-destructive/15 border border-destructive/20 p-3 text-sm text-destructive font-medium">
                                 {serverError}
                             </div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="signup-name" className="text-gray-700">
+                            <Label htmlFor="signup-name" className="text-foreground text-xs font-semibold">
                                 Name
                             </Label>
                             <Input
@@ -93,14 +93,13 @@ export default function SignUp() {
                                 type="text"
                                 placeholder="John Doe"
                                 {...register("name")}
-                                className="border-gray-300 focus:border-primary focus:ring-primary"
                             />
                             {errors.name && (
                                 <p className="text-xs text-destructive">{errors.name.message}</p>
                             )}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="signup-email" className="text-gray-700">
+                            <Label htmlFor="signup-email" className="text-foreground text-xs font-semibold">
                                 Email
                             </Label>
                             <Input
@@ -108,14 +107,13 @@ export default function SignUp() {
                                 type="email"
                                 placeholder="you@example.com"
                                 {...register("email")}
-                                className="border-gray-300 focus:border-primary focus:ring-primary"
                             />
                             {errors.email && (
                                 <p className="text-xs text-destructive">{errors.email.message}</p>
                             )}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="signup-password" className="text-gray-700">
+                            <Label htmlFor="signup-password" className="text-foreground text-xs font-semibold">
                                 Password
                             </Label>
                             <Input
@@ -123,7 +121,6 @@ export default function SignUp() {
                                 type="password"
                                 placeholder="••••••••"
                                 {...register("password")}
-                                className="border-gray-300 focus:border-primary focus:ring-primary"
                             />
                             {errors.password && (
                                 <p className="text-xs text-destructive">{errors.password.message}</p>
@@ -133,16 +130,16 @@ export default function SignUp() {
                     <CardFooter className="flex flex-col space-y-4">
                         <Button
                             type="submit"
-                            className="w-full bg-primary hover:bg-primary/90"
+                            className="w-full h-11 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md hover:shadow-lg transition-all cursor-pointer glass-shimmer"
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? "Creating account..." : "Sign Up"}
                         </Button>
-                        <p className="text-center text-sm text-gray-600">
+                        <p className="text-center text-sm text-muted-foreground">
                             Already have an account?{" "}
                             <Link
                                 href="/sign-in"
-                                className="font-medium text-primary hover:underline"
+                                className="font-semibold text-primary hover:underline"
                             >
                                 Sign in
                             </Link>
