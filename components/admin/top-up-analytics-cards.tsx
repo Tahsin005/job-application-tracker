@@ -12,6 +12,13 @@ import {
     Smartphone,
     Layers,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const METHOD_BADGE_STYLES: Record<string, string> = {
+    bkash: "bg-pink-100 text-pink-700 border-pink-200",
+    nagad: "bg-orange-100 text-orange-700 border-orange-200",
+    rocket: "bg-purple-100 text-purple-700 border-purple-200",
+};
 
 interface TopUpAnalyticsCardsProps {
     analytics?: TopUpAnalyticsSummary | null;
@@ -183,9 +190,9 @@ export function TopUpAnalyticsCards({
                             <p className="text-xs text-slate-400 italic py-2">No payment transactions yet.</p>
                         ) : (
                             methodDistribution.map((item) => {
-                                const isBkash = item.method === "bkash";
-                                const isNagad = item.method === "nagad";
-                                const isRocket = item.method === "rocket";
+                                const badgeStyle =
+                                    METHOD_BADGE_STYLES[item.method.toLowerCase()] ||
+                                    "bg-slate-100 text-slate-700 border-slate-200";
 
                                 return (
                                     <div
@@ -194,14 +201,10 @@ export function TopUpAnalyticsCards({
                                     >
                                         <div className="flex items-center gap-2">
                                             <Badge
-                                                className={`text-[11px] font-bold capitalize border ${isBkash
-                                                        ? "bg-pink-100 text-pink-700 border-pink-200"
-                                                        : isNagad
-                                                            ? "bg-orange-100 text-orange-700 border-orange-200"
-                                                            : isRocket
-                                                                ? "bg-purple-100 text-purple-700 border-purple-200"
-                                                                : "bg-slate-100 text-slate-700 border-slate-200"
-                                                    }`}
+                                                className={cn(
+                                                    "text-[11px] font-bold capitalize border",
+                                                    badgeStyle
+                                                )}
                                             >
                                                 {item.method}
                                             </Badge>
