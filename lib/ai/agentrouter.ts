@@ -9,17 +9,91 @@ export interface AtsAnalysisResult {
     summary: string;
 }
 
-function stripJsonFences(text: string): string {
-    let clean = text.trim();
-    if (clean.startsWith("```json")) {
-        clean = clean.slice(7);
-    } else if (clean.startsWith("```")) {
-        clean = clean.slice(3);
+export function extractJsonFromAiResponse<T = Record<string, unknown>>(rawText: string): T {
+    const text = (rawText || "").trim();
+
+    // 1. Direct parse attempt
+    try {
+        return JSON.parse(text);
+    } catch {}
+
+    // 2. Markdown code block extraction (```json ... ``` or ``` ... ```)
+    const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    if (codeBlockMatch && codeBlockMatch[1]) {
+        const candidate = codeBlockMatch[1].trim();
+        try {
+            return JSON.parse(candidate);
+        } catch {}
     }
-    if (clean.endsWith("```")) {
-        clean = clean.slice(0, -3);
+
+    // 3. Balanced brace extraction
+    const firstBrace = text.indexOf("{");
+    if (firstBrace !== -1) {
+        let depth = 0;
+        let inString = false;
+        let escapeNext = false;
+        let lastBrace = -1;
+
+        for (let i = firstBrace; i < text.length; i++) {
+            const char = text[i];
+            if (escapeNext) {
+                escapeNext = false;
+                continue;
+            }
+            if (char === "\\") {
+                escapeNext = true;
+                continue;
+            }
+            if (char === '"') {
+                inString = !inString;
+                continue;
+            }
+            if (!inString) {
+                if (char === "{") depth++;
+                else if (char === "}") {
+                    depth--;
+                    if (depth === 0) {
+                        lastBrace = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (lastBrace !== -1) {
+            const candidate = text.slice(firstBrace, lastBrace + 1);
+            try {
+                return JSON.parse(candidate);
+            } catch {
+                try {
+                    const sanitized = candidate
+                        .replace(/,\s*([}\]])/g, "$1")
+                        .replace(/[\x00-\x1F\x7F]/g, (c) =>
+                            c === "\n" ? "\\n" : c === "\r" ? "\\r" : c === "\t" ? "\\t" : ""
+                        );
+                    return JSON.parse(sanitized);
+                } catch {}
+            }
+        }
     }
-    return clean.trim();
+
+    // 4. Fallback greedy regex
+    const greedyMatch = text.match(/\{[\s\S]*\}/);
+    if (greedyMatch) {
+        try {
+            return JSON.parse(greedyMatch[0]);
+        } catch {
+            const sanitized = greedyMatch[0]
+                .replace(/,\s*([}\]])/g, "$1")
+                .replace(/[\x00-\x1F\x7F]/g, (c) =>
+                    c === "\n" ? "\\n" : c === "\r" ? "\\r" : c === "\t" ? "\\t" : ""
+                );
+            return JSON.parse(sanitized);
+        }
+    }
+
+    console.error("Failed to parse JSON from AI response. Raw output was:", text);
+    throw new Error("Failed to parse ATS analysis from AI response.");
 }
 
 async function callAiChat(
@@ -60,36 +134,17 @@ export async function analyzeAtsMatch({
         { role: "user", content: userPrompt },
     ]);
 
-    const cleaned = stripJsonFences(rawOutput);
+    const parsed = extractJsonFromAiResponse<Record<string, unknown>>(rawOutput);
 
-    try {
-        const parsed = JSON.parse(cleaned);
-        return {
-            matchScore: Math.min(100, Math.max(0, Math.round(Number(parsed.matchScore) || 0))),
-            matchedKeywords: Array.isArray(parsed.matchedKeywords) ? parsed.matchedKeywords : [],
-            missingKeywords: Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords : [],
-            actionVerbRecommendations: Array.isArray(parsed.actionVerbRecommendations)
-                ? parsed.actionVerbRecommendations
-                : [],
-            summary: typeof parsed.summary === "string" ? parsed.summary : "Analysis completed.",
-        };
-    } catch {
-        // Fallback JSON extraction in case model included additional text
-        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            return {
-                matchScore: Math.min(100, Math.max(0, Math.round(Number(parsed.matchScore) || 0))),
-                matchedKeywords: Array.isArray(parsed.matchedKeywords) ? parsed.matchedKeywords : [],
-                missingKeywords: Array.isArray(parsed.missingKeywords) ? parsed.missingKeywords : [],
-                actionVerbRecommendations: Array.isArray(parsed.actionVerbRecommendations)
-                    ? parsed.actionVerbRecommendations
-                    : [],
-                summary: typeof parsed.summary === "string" ? parsed.summary : "Analysis completed.",
-            };
-        }
-        throw new Error("Failed to parse ATS analysis from AI response.");
-    }
+    return {
+        matchScore: Math.min(100, Math.max(0, Math.round(Number(parsed.matchScore) || 0))),
+        matchedKeywords: Array.isArray(parsed.matchedKeywords) ? (parsed.matchedKeywords as string[]) : [],
+        missingKeywords: Array.isArray(parsed.missingKeywords) ? (parsed.missingKeywords as string[]) : [],
+        actionVerbRecommendations: Array.isArray(parsed.actionVerbRecommendations)
+            ? (parsed.actionVerbRecommendations as string[])
+            : [],
+        summary: typeof parsed.summary === "string" ? parsed.summary : "Analysis completed.",
+    };
 }
 
 export async function generateCoverLetter({

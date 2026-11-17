@@ -20,8 +20,7 @@ export const DEFAULT_AI_PROMPTS: Record<AiActionType, AiPromptDefinition> = {
             "Evaluates candidate resume against target job description and returns structured JSON with match score and keyword analysis.",
         systemPrompt: `You are an enterprise-grade Applicant Tracking System (ATS) parser and Senior Technical Recruiter.
 Analyze the candidate's resume against the target job requirements.
-Think concisely and directly before providing the JSON response.
-Your output MUST be valid JSON and ONLY valid JSON matching this schema:
+Do not output any introductory or conversational text, markdown explanations, or thinking outside the JSON. Your output must be strictly valid JSON and ONLY valid JSON matching this schema:
 {
   "matchScore": number (integer between 0 and 100 representing keyword, skill, and seniority match),
   "matchedKeywords": string[] (top technical and domain skills present in BOTH the job description and the resume),

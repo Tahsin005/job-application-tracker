@@ -53,6 +53,73 @@ export class OpenAiCompatibleProvider implements IAiProvider {
         return headers;
     }
 
+    private isResponsesModel(model: string): boolean {
+        return (
+            model.includes("sol") ||
+            model.startsWith("gpt-6") ||
+            model.startsWith("gpt-5")
+        );
+    }
+
+    private async callResponsesApi(
+        messages: AiChatMessage[],
+        targetModel: string,
+        maxTokens: number,
+        headers: Record<string, string>
+    ): Promise<string> {
+        let fallbackBase = "https://agentrouter.org/v1";
+        if (this.config.provider === "agentrouter") {
+            fallbackBase = "https://agentrouter.org/v1";
+        }
+        const cleanBase = (this.config.baseUrl?.trim() || fallbackBase).replace(/\/+$/, "");
+        const responsesEndpoint = cleanBase.replace(/\/chat\/completions$/, "") + "/responses";
+
+        const payload: Record<string, unknown> = {
+            model: targetModel,
+            input: messages,
+            // Reasoning tokens count against max_output_tokens in the Responses API.
+            // Ensure ample headroom (16k) so reasoning does not starve and truncate the JSON.
+            max_output_tokens: Math.max(maxTokens, 16000),
+        };
+
+        if (targetModel.includes("sol")) {
+            payload.reasoning = { effort: "low" };
+        }
+
+        const response = await fetch(responsesEndpoint, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(payload),
+            signal: AbortSignal.timeout(180000),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => "");
+            throw new Error(`API error (${response.status}): ${errorText || response.statusText}`);
+        }
+
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(`Provider error: ${data.error.message || JSON.stringify(data.error)}`);
+        }
+
+        const messageObj = data.output?.find((item: { type: string }) => item.type === "message");
+        let text = "";
+        if (messageObj && Array.isArray(messageObj.content)) {
+            for (const part of messageObj.content) {
+                if (part.type === "output_text" && part.text) {
+                    text += part.text;
+                }
+            }
+        }
+
+        if (!text) {
+            throw new Error("Received empty response from AI model responses endpoint.");
+        }
+
+        return text;
+    }
+
     async chat(
         messages: AiChatMessage[],
         options: AiChatOptions = {},
@@ -63,6 +130,25 @@ export class OpenAiCompatibleProvider implements IAiProvider {
         const endpoint = this.getEndpoint();
         const headers = this.getHeaders();
 
+        // Direct dispatch to /v1/responses for models requiring OpenAI Responses API
+        if (this.isResponsesModel(targetModel)) {
+            try {
+                return await this.callResponsesApi(messages, targetModel, maxTokens, headers);
+            } catch (err: unknown) {
+                if (
+                    targetModel === "gpt-6.1-sol" &&
+                    (this.config.provider === "agentrouter" ||
+                        (this.config.baseUrl && this.config.baseUrl.includes("agentrouter")))
+                ) {
+                    console.warn(
+                        `Model gpt-6.1-sol failed (${err instanceof Error ? err.message : String(err)}). Falling back to gpt-5.6-sol...`
+                    );
+                    return this.callResponsesApi(messages, "gpt-5.6-sol", maxTokens, headers);
+                }
+                throw err;
+            }
+        }
+
         try {
             const response = await fetch(endpoint, {
                 method: "POST",
@@ -72,27 +158,38 @@ export class OpenAiCompatibleProvider implements IAiProvider {
                     messages,
                     max_tokens: maxTokens,
                 }),
-                signal: AbortSignal.timeout(60000),
+                signal: AbortSignal.timeout(180000),
             });
 
             if (!response.ok) {
                 const errorText = await response.text().catch(() => "");
 
-                // Auto-fallback on AgentRouter if channel is down
+                // Auto-redirect to /v1/responses if provider indicates it's required
                 if (
-                    this.config.provider === "agentrouter" &&
+                    errorText.includes("/v1/responses") ||
+                    errorText.includes("Responses API")
+                ) {
+                    return this.callResponsesApi(messages, targetModel, maxTokens, headers);
+                }
+
+                // Auto-fallback on AgentRouter if channel is down
+                const isAgentRouter =
+                    this.config.provider === "agentrouter" ||
+                    (this.config.baseUrl && this.config.baseUrl.includes("agentrouter"));
+                if (
+                    isAgentRouter &&
                     (response.status === 503 ||
                         response.status === 402 ||
                         errorText.includes("无可用渠道") ||
                         errorText.includes("exhausted")) &&
-                    targetModel !== "deepseek-v4-flash"
+                    targetModel === "gpt-6.1-sol"
                 ) {
                     console.warn(
-                        `Model ${targetModel} unavailable on AgentRouter (${response.status}). Falling back to deepseek-v4-flash...`
+                        `Model ${targetModel} unavailable on AgentRouter (${response.status}). Falling back to gpt-5.6-sol...`
                     );
                     return this.chat(
                         messages,
-                        { ...options, modelOverride: "deepseek-v4-flash" },
+                        { ...options, modelOverride: "gpt-5.6-sol" },
                         retryCount
                     );
                 }
@@ -106,17 +203,27 @@ export class OpenAiCompatibleProvider implements IAiProvider {
 
             if (data.error) {
                 if (
-                    this.config.provider === "agentrouter" &&
+                    data.error.message?.includes("/v1/responses") ||
+                    data.error.message?.includes("Responses API")
+                ) {
+                    return this.callResponsesApi(messages, targetModel, maxTokens, headers);
+                }
+
+                const isAgentRouter =
+                    this.config.provider === "agentrouter" ||
+                    (this.config.baseUrl && this.config.baseUrl.includes("agentrouter"));
+                if (
+                    isAgentRouter &&
                     (data.error.message?.includes("无可用渠道") ||
                         data.error.message?.includes("exhausted")) &&
-                    targetModel !== "deepseek-v4-flash"
+                    targetModel === "gpt-6.1-sol"
                 ) {
                     console.warn(
-                        `Model ${targetModel} channel unavailable. Falling back to deepseek-v4-flash...`
+                        `Model ${targetModel} channel unavailable. Falling back to gpt-5.6-sol...`
                     );
                     return this.chat(
                         messages,
-                        { ...options, modelOverride: "deepseek-v4-flash" },
+                        { ...options, modelOverride: "gpt-5.6-sol" },
                         retryCount
                     );
                 }

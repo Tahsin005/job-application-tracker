@@ -49,7 +49,7 @@ const PROVIDER_SPECS: Record<AiProviderType, ProviderSpec> = {
         docLabel: "agentrouter.org",
         baseUrlPlaceholder: "e.g. https://agentrouter.org/v1",
         apiKeyPlaceholder: "sk-...",
-        modelPlaceholder: "e.g. deepseek-v4-flash, deepseek-v3, deepseek-r1",
+        modelPlaceholder: "e.g. gpt-6.1-sol, gpt-5.6-sol, deepseek-chat",
     },
     openai: {
         id: "openai",

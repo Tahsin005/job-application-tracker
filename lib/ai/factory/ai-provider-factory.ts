@@ -92,7 +92,7 @@ export class AiProviderFactory {
         const envApiKey = process.env.AGENTROUTER_API_KEY || "";
         const envBaseUrl =
             process.env.AGENTROUTER_BASE_URL || "https://agentrouter.org/v1";
-        const envModel = process.env.AGENTROUTER_MODEL || "deepseek-v4-flash";
+        const envModel = process.env.AGENTROUTER_MODEL || "gpt-6.1-sol";
 
         return {
             config: {
